@@ -1,0 +1,129 @@
+services:
+  # ==========================
+  # 🔹 NGINX (Proxy reverso)
+  # ==========================
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - php
+      - frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ../../../backend:/var/www
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - app_network
+
+  # ==========================
+  # 🔹 PHP / LARAVEL (Backend)
+  # ==========================
+  php:
+    build:
+      context: ../../../backend
+      dockerfile: Dockerfile.dev
+    working_dir: /var/www
+    command: >
+      sh -c "
+      echo '⏳ Aguardando MySQL subir...' &&
+      sleep 15 &&
+      composer install &&
+      php artisan key:generate &&
+      php artisan migrate:fresh --seed &&
+      php-fpm
+      "
+    volumes:
+      - ../../../backend:/var/www
+    expose:
+      - "9000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app_network
+
+  # ==========================
+  # 🔹 FRONTEND (Vue 3 + Vite)
+  # ==========================
+  frontend:
+    build:
+      context: ../../../frontend
+      dockerfile: Dockerfile.dev
+    working_dir: /app
+    command: >
+      sh -c "
+      echo '🧹 Limpando cache do Vite...' &&
+      rm -rf node_modules/.vite &&
+      echo '🚀 Instalando dependências...' &&
+      npm ci --prefer-offline --no-audit --no-fund &&
+      echo '🧠 Aumentando heap do Node...' &&
+      node --max-old-space-size=4096 node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5173
+      "
+    volumes:
+      - ../../../frontend:/app
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api
+      - NODE_OPTIONS=--max_old_space_size=4096
+    ports:
+      - "5173:5173"
+    expose:
+      - "5173"
+    depends_on:
+      - php
+    networks:
+      - app_network
+
+  # ==========================
+  # 🔹 MYSQL (Banco de Dados)
+  # ==========================
+  mysql:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: sistema_clinicas
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - app_network
+
+  # ==========================
+  # 🔹 REDIS (Cache / Sessões)
+  # ==========================
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+
+  # ==========================
+  # 🔹 MAILPIT (Teste de e-mails)
+  # ==========================
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+    networks:
+      - app_network
+
+# ==========================
+# 🔹 RECURSOS COMPARTILHADOS
+# ==========================
+volumes:
+  dbdata:
+
+networks:
+  app_network:
+    driver: bridge
