@@ -4,51 +4,47 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Application Name
+    | Nome da Aplicação
     |--------------------------------------------------------------------------
     |
-    | This value is the name of your application, which will be used when the
-    | framework needs to place the application's name in a notification or
-    | other UI elements where an application name needs to be displayed.
-    |
-    */
-
-    'name' => env('APP_NAME', 'Laravel'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application Environment
-    |--------------------------------------------------------------------------
-    |
-    | This value determines the "environment" your application is currently
-    | running in. This may determine how you prefer to configure various
-    | services the application utilizes. Set this in your ".env" file.
+    | Este valor define o nome do seu aplicativo e é usado em notificações,
+    | e-mails, logs e outros contextos onde a identificação do sistema é necessária.
     |
     */
 
-    'env' => env('APP_ENV', 'production'),
+    'name' => env('APP_NAME', 'Sistema Clínicas'),
 
     /*
     |--------------------------------------------------------------------------
-    | Application Debug Mode
+    | Ambiente da Aplicação
     |--------------------------------------------------------------------------
     |
-    | When your application is in debug mode, detailed error messages with
-    | stack traces will be shown on every error that occurs within your
-    | application. If disabled, a simple generic error page is shown.
+    | Define o ambiente atual da aplicação (local, staging, production).
+    | Afeta comportamentos como cache, debug e logs.
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'env' => env('APP_ENV', 'local'),
 
     /*
     |--------------------------------------------------------------------------
-    | Application URL
+    | Modo Debug
     |--------------------------------------------------------------------------
     |
-    | This URL is used by the console to properly generate URLs when using
-    | the Artisan command line tool. You should set this to the root of
-    | the application so that it's available within Artisan commands.
+    | Quando habilitado, exibe mensagens de erro detalhadas com stack trace.
+    | Em produção, deve ser sempre false.
+    |
+    */
+
+    'debug' => (bool) env('APP_DEBUG', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | URL da Aplicação
+    |--------------------------------------------------------------------------
+    |
+    | Define a URL base usada pelo Artisan e outros serviços internos.
+    | Idealmente, deve apontar para o domínio ou endpoint principal.
     |
     */
 
@@ -56,42 +52,49 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Application Timezone
+    | Fuso Horário
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | Define o fuso horário padrão para todas as funções de data/hora do PHP.
+    | Recomendado: America/Sao_Paulo para o Brasil.
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone' => env('APP_TIMEZONE', 'America/Sao_Paulo'),
 
     /*
     |--------------------------------------------------------------------------
-    | Application Locale Configuration
+    | Localização (Idioma)
     |--------------------------------------------------------------------------
     |
-    | The application locale determines the default locale that will be used
-    | by Laravel's translation / localization methods. This option can be
-    | set to any locale for which you plan to have translation strings.
+    | Define o idioma padrão para traduções, validações e mensagens do sistema.
+    | O fallback_locale é usado caso o idioma principal não esteja disponível.
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'pt_BR'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    /*
+    |--------------------------------------------------------------------------
+    | Idioma para o Faker
+    |--------------------------------------------------------------------------
+    |
+    | Controla o idioma usado pelo Faker (gerador de dados falsos) nos Seeders
+    | e Factories. "pt_BR" gera nomes, endereços e telefones brasileiros.
+    |
+    */
+
+    'faker_locale' => env('APP_FAKER_LOCALE', 'pt_BR'),
 
     /*
     |--------------------------------------------------------------------------
-    | Encryption Key
+    | Chave de Criptografia
     |--------------------------------------------------------------------------
     |
-    | This key is utilized by Laravel's encryption services and should be set
-    | to a random, 32 character string to ensure that all encrypted values
-    | are secure. You should do this prior to deploying the application.
+    | A chave usada para criptografar dados sensíveis. Deve ter 32 caracteres.
+    | Gere com: php artisan key:generate
     |
     */
 
@@ -107,14 +110,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Maintenance Mode Driver
+    | Modo de Manutenção
     |--------------------------------------------------------------------------
     |
-    | These configuration options determine the driver used to determine and
-    | manage Laravel's "maintenance mode" status. The "cache" driver will
-    | allow maintenance mode to be controlled across multiple machines.
-    |
-    | Supported drivers: "file", "cache"
+    | Controla como o Laravel lida com o modo de manutenção.
+    | O driver "file" cria um arquivo local; o "cache" permite controle distribuído.
     |
     */
 

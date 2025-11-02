@@ -1,0 +1,60 @@
+{
+  "recommendations": [
+    // ⚙️ — Core productivity
+    "ms-azuretools.vscode-docker",
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens",
+    "donjayamanne.githistory",
+    "oderwat.indent-rainbow",
+    "usernamehw.errorlens",
+    "streetsidesoftware.code-spell-checker",
+    "formulahendry.auto-close-tag",
+    "formulahendry.auto-rename-tag",
+    "aaron-bond.better-comments",
+
+    // 🧱 — Laravel / PHP
+    "bmewburn.vscode-intelephense-client",
+    "amiralizadeh9480.laravel-extra-intellisense",
+    "open-southeners.laravel-pint",
+    "onecentlin.laravel-blade",
+    "onecentlin.laravel5-snippets",
+    "ryannaddy.laravel-artisan",
+    "codingyu.laravel-goto-view",
+    "austenc.laravel-blade-spacer",
+    "mikestead.dotenv",
+
+    // 🧩 — Vue / Frontend
+    "vue.volar",
+    "vue.vscode-typescript-vue-plugin",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "antfu.iconify",
+    "antfu.unocss",
+    "lokalise.i18n-ally",
+
+    // 🐳 — Docker / DevOps
+    "ms-azuretools.vscode-docker",
+    "humao.rest-client",
+    "foxundermoon.shell-format",
+
+    // 🧠 — Utilitários
+    "christian-kohler.path-intellisense",
+    "shardulm94.trailing-spaces",
+    "editorconfig.editorconfig",
+    "yoavbls.pretty-ts-errors",
+    "kamikillerto.vscode-colorize",
+    "gruntfuggly.todo-tree",
+
+    // 🎨 — Visual e UX
+    "monokai.theme-monokai-pro-vscode",
+    "pkief.material-icon-theme",
+    "bierner.markdown-preview-github-styles",
+    "visualstudioexptteam.vscodeintellicode"
+  ],
+  "unwantedRecommendations": [
+    "octref.vetur", // ❌ substituído por Volar
+    "xdebug.php-debug", // preferimos debug interno via Sail
+    "felixfbecker.php-intellisense" // substituído por Intelephense
+  ]
+}
