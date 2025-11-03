@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Smooth scrolling for in-page anchors */
+html {
+	scroll-behavior: smooth;
+}
+
+/* Remove default body margin that can create an unwanted white gap */
+body { margin: 0; }
+
+/* Offset sections so fixed header doesn't cover the top of anchored sections */
+section {
+	scroll-margin-top: 5rem; /* matches restored header height */
+}
