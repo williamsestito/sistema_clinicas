@@ -30,7 +30,7 @@ services:
       composer install &&
       php artisan key:generate &&
       php artisan migrate:fresh --seed &&
-      php-fpm
+      exec php-fpm
       "
     volumes:
       - ../../../backend:/var/www
@@ -92,7 +92,7 @@ services:
       timeout: 5s
       retries: 10
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - dbdata:/var/lib/mysql
     networks:
