@@ -8,8 +8,8 @@ import router from './router'
 
 const app = createApp(App)
 
-// Temporary site title (simulate value coming from backend)
-const siteTitle = 'clinica duda - podologia'
+// Simulando que vem do banco de dados
+const siteTitle = 'Clínica Duda - Podologia'
 document.title = siteTitle
 
 app.use(createPinia())

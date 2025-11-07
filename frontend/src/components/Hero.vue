@@ -1,42 +1,87 @@
 <template>
-  <section id="top" class="relative h-screen flex items-center" style="background: linear-gradient(90deg, rgba(255,255,255,0.0), rgba(0,0,0,0.0));">
-    <div class="absolute inset-0 bg-[url('/assets/hero.jpg')] bg-cover bg-center -z-10"></div>
-    <div class="absolute inset-0 bg-gradient-to-r from-emerald-900/40 to-transparent -z-5"></div>
+  <section
+    class="relative h-[86vh] min-h-[560px] flex items-center"
+    :style="heroStyle"
+    aria-label="Hero - Beleza e bem-estar"
+  >
+    <!-- overlay escuro com leve tonalidade esmeralda -->
+    <div class="absolute inset-0 bg-gradient-to-r from-emerald-900/35 via-transparent to-transparent"></div>
 
-    <div class="max-w-6xl mx-auto px-6 text-white">
-      <div class="pt-24 md:pt-36 lg:pt-44 max-w-3xl">
-        <h1 class="text-4xl md:text-6xl lg:text-7xl font-serif font-extrabold leading-tight drop-shadow-lg">Beleza e bem-estar<br/>começam pelos seus pés.</h1>
-        <p class="mt-6 max-w-2xl text-lg text-white/90">Cuidado, saúde e estética em um só lugar.</p>
+    <div class="max-w-6xl mx-auto px-6 w-full z-10">
+      <div class="flex items-start">
+        <!-- conteúdo principal -->
+        <div class="w-full lg:w-full pt-16 md:pt-24">
+          <h1 class="font-serif text-4xl md:text-6xl lg:text-7xl text-white leading-tight drop-shadow-sm">
+            Beleza e bem-estar<br />
+            começam pelos seus<br />
+            pés.
+          </h1>
 
-        <div class="mt-6">
-          <a href="#agendamento" class="inline-block bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 py-3 shadow-lg">Agende seu horário</a>
+          <p class="mt-6 text-emerald-100/90 text-sm md:text-base max-w-xl">
+            Cuidado, saúde e estética em um só lugar.
+          </p>
+
+          <div class="mt-8">
+            <a
+              href="#agendamento"
+              class="inline-block bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-full text-sm font-medium shadow-md transition"
+              aria-label="Agende seu horário"
+            >
+              Agende seu horário
+            </a>
+          </div>
         </div>
+
+        <!-- espaço/efeito decorativo à direita (opcional) -->
+        <div class="hidden lg:block flex-1"></div>
       </div>
     </div>
 
-    <!-- scroll indicator -->
-  <div class="absolute bottom-16 left-1/2 transform -translate-x-1/2">
-      <button @click.prevent="document.querySelector('#sobre')?.scrollIntoView({ behavior: 'smooth' })" class="scroll-indicator flex items-center justify-center h-10 w-10 rounded-full bg-white/20 text-white hover:bg-white/30">
-        <!-- mouse icon: rounded rect with wheel line -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="7" y="3" width="10" height="14" rx="5" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
-          <path d="M12 7v3" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" />
-        </svg>
-      </button>
+    <!-- indicador de scroll -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
+      <a href="#sobre" class="flex items-center justify-center w-10 h-16 rounded-full border border-white/30 text-white/80">
+        <span class="block w-2 h-2 rounded-full bg-white/80 animate-bounce"></span>
+      </a>
     </div>
   </section>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useHead } from '@vueuse/head' // opcional, remova se não usar
+
+// aceita prop com URL da imagem (facilita trocar depois)
+const props = defineProps({
+  image: {
+    type: String,
+    default: '/hero.jpg' // substitua pelo caminho da imagem que você for colocar
+  }
+})
+
+const heroStyle = computed(() => {
+  return {
+    backgroundImage: `url('${props.image}')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
+  }
+})
+</script>
 
 <style scoped>
-section { min-height: 680px; }
+section {
+  /* garante que a imagem preencha e o overlay funcione bem */
+  position: relative;
+  overflow: hidden;
+}
 
-/* scroll indicator animation */
-.scroll-indicator { animation: scroll-pulse 1.8s ease-in-out infinite; }
-@keyframes scroll-pulse {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(6px); }
-  100% { transform: translateY(0); }
+/* leve escurecimento local para garantir contraste do texto em imagens claras */
+section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6,78,59,0.15) 0%, rgba(6,78,59,0.28) 60%, rgba(6,78,59,0.45) 100%);
+  pointer-events: none;
+  z-index: 5;
 }
 </style>
