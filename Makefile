@@ -2,6 +2,10 @@
 # SISTEMA CLÍNICAS - MAKEFILE
 # ===========================
 
+.SILENT:
+SHELL := C:/Program Files/Git/bin/bash.exe
+.SHELLFLAGS := -o pipefail -c
+
 .PHONY: bootstrap up down logs restart migrate seed npm-dev logs-frontend
 
 # -----------------------------------------
@@ -51,7 +55,7 @@ logs-frontend:
 # 🔁 Reinicia containers (sem rebuild)
 # -----------------------------------------
 restart:
-	make down && make up
+	$(MAKE) down && $(MAKE) up
 
 # -----------------------------------------
 # 🔄 Reaplicar migrations (sem resetar tudo)
