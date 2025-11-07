@@ -56,5 +56,6 @@
     "octref.vetur", // ❌ substituído por Volar
     "xdebug.php-debug", // preferimos debug interno via Sail
     "felixfbecker.php-intellisense" // substituído por Intelephense
-  ]
+  ],
+  "chatgpt.lang": "pt-br"
 }
