@@ -10,7 +10,6 @@
 
   <div x-data="{ aba: 'pessoal' }" class="bg-white rounded-lg shadow p-6">
 
-    <!-- Abas -->
     <div class="flex border-b border-gray-200 mb-4">
       <button @click="aba = 'pessoal'" 
               :class="aba === 'pessoal' ? 'border-b-2 border-green-600 text-green-700' : 'text-gray-500'"
@@ -27,7 +26,7 @@
     <form method="POST" action="{{ route('employees.store') }}" class="space-y-4">
       @csrf
 
-      <!-- Aba: Dados Pessoais -->
+
       <div x-show="aba === 'pessoal'" x-transition>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -48,7 +47,7 @@
             <span class="text-sm text-gray-700">É nome social?</span>
           </div>
 
-          <!-- CPF -->
+    
           <div x-data="{ cpfValido: true }">
             <label class="text-sm text-gray-600">Documento (CPF)</label>
             <input type="text" name="document" maxlength="14"
@@ -128,7 +127,7 @@
             </select>
           </div>
 
-          <!-- Senha com ícone -->
+    
           <div x-data="{ show: false }">
             <label class="text-sm text-gray-600">Senha</label>
             <div class="relative">
@@ -156,7 +155,7 @@
         </div>
       </div>
 
-      <!-- Aba: Localização -->
+
       <div x-show="aba === 'localizacao'" x-transition>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -202,9 +201,7 @@
       </div>
     </form>
   </div>
-</div>
-
-<!-- Font Awesome + Alpine.js + Máscara -->
+</div
 <script src="https://kit.fontawesome.com/a2d9d6c8b8.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@alpinejs/mask@3.x.x/dist/cdn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>

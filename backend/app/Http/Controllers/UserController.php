@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-    /**
-     * Retorna lista de usuários (API interna em JSON)
-     */
+    
     public function index(Request $request)
     {
         $authUser = Auth::user();
@@ -25,9 +23,7 @@ class UserController extends Controller
         return response()->json($query->paginate(20));
     }
 
-    /**
-     * Exibe lista de colaboradores (view Blade)
-     */
+    
     public function listView(Request $request)
     {
         $authUser = Auth::user();
@@ -49,17 +45,13 @@ class UserController extends Controller
         return view('employees.employees', compact('usuarios'));
     }
 
-    /**
-     * Exibe formulário de criação de colaborador
-     */
+    
     public function create()
     {
         return view('employees.create');
     }
 
-    /**
-     * Salva um novo colaborador
-     */
+    
     public function store(Request $request)
     {
         $authUser = Auth::user();
@@ -95,9 +87,7 @@ class UserController extends Controller
             ->with('success', '✅ Colaborador cadastrado com sucesso.');
     }
 
-    /**
-     * Exibe formulário de edição de colaborador
-     */
+    
     public function edit($id)
     {
         $authUser = Auth::user();
@@ -109,9 +99,7 @@ class UserController extends Controller
         return view('employees.edit', compact('usuario'));
     }
 
-    /**
-     * Atualiza dados de um colaborador
-     */
+    
     public function update(Request $request, $id)
     {
         $authUser = Auth::user();
@@ -149,9 +137,7 @@ class UserController extends Controller
             ->with('success', '✅ Colaborador atualizado com sucesso.');
     }
 
-    /**
-     * Exclui colaborador
-     */
+    
     public function destroy($id)
     {
         $authUser = Auth::user();
