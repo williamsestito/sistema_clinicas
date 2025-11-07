@@ -4,22 +4,26 @@
       <h2 class="text-4xl md:text-5xl font-serif font-bold text-emerald-900 text-center">O Que Dizem Nossos Clientes</h2>
       <p class="text-center text-sm text-emerald-700 mt-2">Depoimentos reais de quem confia em nossos serviços</p>
 
-      <!-- carousel: scrollable, drag-to-scroll, sem autoplay -->
+      <!-- carousel: scrollable, drag-to-scroll (mouse / touch / pointer) -->
       <div class="relative mt-8">
-        <!-- viewport: permite scroll horizontal por arrastar / swipe -->
         <div
           ref="viewportRef"
           class="overflow-x-auto no-scrollbar"
           @pointerdown="onPointerDown"
+          @pointermove="onPointerMove"
           @pointerup="onPointerUp"
           @pointercancel="onPointerUp"
           @pointerleave="onPointerUp"
-          @pointermove="onPointerMove"
+          @mousedown="onPointerDown"
+          @mousemove="onPointerMove"
+          @mouseup="onPointerUp"
+          @touchstart.prevent="onPointerDown"
+          @touchmove.passive="onPointerMove"
+          @touchend="onPointerUp"
         >
           <div
             ref="trackRef"
             class="flex items-stretch gap-6 px-2"
-            :style="{ paddingBottom: '4px' }"
           >
             <article
               v-for="(t, idx) in testimonials"
@@ -104,8 +108,6 @@ const visibleCount = ref(4)
 
 // card width css class (computed para responsividade)
 const cardWidthClass = computed(() => {
-  // usa classes tailwind-like para largura fixa por breakpoints
-  // em mobile 90% largura, sm: 45% (2 col), lg: 23% (4 col)
   return 'scroll-card w-[88%] sm:w-[45%] lg:w-[23%] md:w-[30%]'
 })
 
@@ -125,13 +127,12 @@ function updateVisibleCountByWidth() {
 async function recalc() {
   updateVisibleCountByWidth()
   await nextTick()
-  // opcional: poderia calcular tamanhos se necessário
 }
 
 function scrollNext() {
   const vp = viewportRef.value
   if (!vp) return
-  const amount = Math.floor(vp.clientWidth * 0.9) // rola quase a viewport
+  const amount = Math.floor(vp.clientWidth * 0.9)
   vp.scrollBy({ left: amount, behavior: 'smooth' })
 }
 
@@ -142,34 +143,66 @@ function scrollPrev() {
   vp.scrollBy({ left: -amount, behavior: 'smooth' })
 }
 
-// pointer / drag handlers (funciona mouse + touch + pen)
-function onPointerDown(e: PointerEvent) {
+// helper to get clientX from different event types
+function getClientX(e: PointerEvent | MouseEvent | TouchEvent): number {
+  if ('touches' in e && e.touches && e.touches.length) {
+    return e.touches[0].clientX
+  }
+  if ('changedTouches' in e && e.changedTouches && e.changedTouches.length) {
+    return e.changedTouches[0].clientX
+  }
+  // PointerEvent and MouseEvent
+  return (e as PointerEvent).clientX ?? (e as MouseEvent).clientX ?? 0
+}
+
+function onPointerDown(e: PointerEvent | MouseEvent | TouchEvent) {
   const vp = viewportRef.value
   if (!vp) return
+
   isPointerDown = true
-  pointerId = e.pointerId
-  (e.target as Element).setPointerCapture(pointerId)
-  startX = e.clientX
+
+  // capture pointerId only if event has it (PointerEvent)
+  if ('pointerId' in e && typeof (e as any).pointerId === 'number') {
+    pointerId = (e as PointerEvent).pointerId
+    // try to set pointer capture when supported
+    try {
+      const target = e.target as Element & { setPointerCapture?: (id: number) => void }
+      if (typeof target.setPointerCapture === 'function') target.setPointerCapture(pointerId)
+    } catch {
+      // ignore if not supported or fails
+      pointerId = null
+    }
+  } else {
+    pointerId = null
+  }
+
+  startX = getClientX(e)
   startScroll = vp.scrollLeft
   vp.classList.add('dragging')
 }
 
-function onPointerMove(e: PointerEvent) {
+function onPointerMove(e: PointerEvent | MouseEvent | TouchEvent) {
   if (!isPointerDown) return
-  if (pointerId !== e.pointerId) return
   const vp = viewportRef.value
   if (!vp) return
-  const dx = e.clientX - startX
+
+  const clientX = getClientX(e)
+  const dx = clientX - startX
   vp.scrollLeft = startScroll - dx
 }
 
-function onPointerUp(e?: PointerEvent) {
+function onPointerUp(e?: PointerEvent | MouseEvent | TouchEvent) {
   if (!isPointerDown) return
   const vp = viewportRef.value
   if (pointerId != null && vp) {
     try {
-      vp.releasePointerCapture(pointerId)
-    } catch {}
+      const target = (e && (e.target as Element)) || vp
+      if (typeof (target as any).releasePointerCapture === 'function') {
+        (target as any).releasePointerCapture(pointerId)
+      }
+    } catch {
+      // ignore
+    }
   }
   isPointerDown = false
   pointerId = null
@@ -201,7 +234,6 @@ section { padding-top: 5rem; padding-bottom: 5rem; }
 .track { scroll-snap-type: x mandatory; }
 .scroll-card {
   scroll-snap-align: start;
-  /* garante altura e espaçamento similar ao mock */
   min-height: 180px;
   display: flex;
   flex-direction: column;
