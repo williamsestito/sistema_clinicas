@@ -16,9 +16,13 @@
   <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/favicon/favicon-16x16.png') }}">
   <link rel="manifest" href="{{ asset('assets/favicon/site.webmanifest') }}">
   <link rel="shortcut icon" href="{{ asset('assets/favicon/favicon.ico') }}" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@alpinejs/mask@3.x.x/dist/cdn.min.js" defer></script>
+
   <meta name="theme-color" content="#1a5632">
 
-  {{-- Tailwind & Alpine --}}
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="//unpkg.com/alpinejs" defer></script>
 </head>
