@@ -10,7 +10,6 @@
     </a>
   </div>
 
-  <!-- Filtros -->
   <div class="bg-white p-4 rounded-lg shadow mb-4">
     <form method="GET" action="{{ route('employees.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
@@ -46,7 +45,6 @@
     </form>
   </div>
 
-  <!-- Tabela -->
   <div class="bg-white rounded-lg shadow overflow-x-auto">
     <table class="min-w-full text-sm text-left">
       <thead class="bg-gray-100">
