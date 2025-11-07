@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-
+    /**
+     * Endpoint JSON: retorna usuários filtrados (API).
+     */
     public function index(Request $request)
     {
         $authUser = Auth::user();
@@ -21,6 +23,21 @@ class UserController extends Controller
             ->orderBy('name');
 
         return response()->json($query->paginate(20));
+    }
+
+    /**
+     * Tela Blade: lista de usuários internos (não clientes).
+     */
+    public function listView(Request $request)
+    {
+        $authUser = Auth::user();
+
+        $usuarios = User::where('tenant_id', $authUser->tenant_id)
+            ->where('role', '!=', 'client')
+            ->orderBy('name')
+            ->paginate(15);
+
+        return view('employees.employees', compact('usuarios'));
     }
 
     public function store(Request $request)
