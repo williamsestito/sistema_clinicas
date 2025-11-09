@@ -1,48 +1,48 @@
-@extends('layouts.app')
+@extends('layouts.app_client')
 
 @section('title', 'Meus Agendamentos')
 
 @section('content')
-<div x-data="agendamentosPacient()" class="p-6">
+<div x-data="agendamentosClient()" class="p-4 sm:p-6">
 
   <!-- Cabeçalho -->
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-xl font-semibold text-gray-700">📅 Meus Agendamentos</h1>
-    <a href="{{ route('pacient.schedule') }}"
-       class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-md flex items-center gap-2">
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+    <h1 class="text-xl sm:text-2xl font-semibold text-gray-700 flex items-center gap-2">
+      📅 <span>Meus Agendamentos</span>
+    </h1>
+
+    <a href="{{ route('client.schedule') }}"
+       class="w-full sm:w-auto text-center bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base px-4 py-2 rounded-md flex items-center justify-center gap-2 transition">
       <i class="fa-solid fa-calendar-plus"></i> Novo Agendamento
     </a>
   </div>
 
   <!-- Abas -->
-  <div class="flex border-b border-gray-200 mb-4">
+  <div class="flex flex-wrap border-b border-gray-200 mb-4">
     <button @click="aba = 'ativos'"
             :class="aba === 'ativos' ? 'border-b-2 border-green-600 text-green-700' : 'text-gray-500'"
-            class="px-4 py-2 text-sm font-medium focus:outline-none">
+            class="px-4 py-2 text-sm font-medium focus:outline-none w-1/2 sm:w-auto text-center">
       Ativos
     </button>
     <button @click="aba = 'historico'"
             :class="aba === 'historico' ? 'border-b-2 border-green-600 text-green-700' : 'text-gray-500'"
-            class="px-4 py-2 text-sm font-medium focus:outline-none">
+            class="px-4 py-2 text-sm font-medium focus:outline-none w-1/2 sm:w-auto text-center">
       Histórico
     </button>
   </div>
 
-  <!-- ===================================== -->
-  <!-- ABA: AGENDAMENTOS ATIVOS (em cards) -->
-  <!-- ===================================== -->
+  <!-- ABA: AGENDAMENTOS ATIVOS -->
   <div x-show="aba === 'ativos'" x-transition>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
 
-      <!-- Card de agendamento -->
       @foreach (range(1, 3) as $a)
-      <div class="bg-white rounded-lg shadow p-4 border border-gray-100 flex flex-col justify-between">
+      <div class="bg-white rounded-xl shadow p-4 border border-gray-100 flex flex-col justify-between hover:shadow-md transition">
         <div>
           <div class="flex items-center justify-between mb-2">
-            <h2 class="font-semibold text-gray-800 text-sm">
+            <h2 class="font-semibold text-gray-800 text-sm sm:text-base">
               Consulta com <span class="text-green-700">Dra. Juliana</span>
             </h2>
-            <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-md">Pendente</span>
+            <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-md whitespace-nowrap">Pendente</span>
           </div>
           <p class="text-sm text-gray-600"><i class="fa-regular fa-calendar"></i> 10/11/2025 às 14:00</p>
           <p class="text-sm text-gray-600"><i class="fa-solid fa-user-md"></i> Dermatologia</p>
@@ -67,53 +67,54 @@
     </div>
   </div>
 
-  <!-- ===================================== -->
-  <!-- ABA: HISTÓRICO DE AGENDAMENTOS -->
-  <!-- ===================================== -->
+  <!-- ABA: HISTÓRICO -->
   <div x-show="aba === 'historico'" x-transition>
-    <div class="bg-white rounded-lg shadow p-4 mb-4 flex flex-wrap gap-3 items-end border border-gray-100">
-      <div>
+    <div class="bg-white rounded-xl shadow p-4 mb-4 border border-gray-100 space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-end sm:gap-3">
+      <div class="w-full sm:w-auto">
         <label class="text-xs text-gray-500">Data</label>
-        <input type="date" x-model="filtro.data" class="border rounded-md px-3 py-1.5 text-sm">
+        <input type="date" x-model="filtro.data" class="border rounded-md px-3 py-1.5 text-sm w-full sm:w-auto">
       </div>
-      <div>
+
+      <div class="w-full sm:w-auto">
         <label class="text-xs text-gray-500">Profissional</label>
-        <select x-model="filtro.profissional" class="border rounded-md px-3 py-1.5 text-sm">
+        <select x-model="filtro.profissional" class="border rounded-md px-3 py-1.5 text-sm w-full sm:w-auto">
           <option value="">Todos</option>
           <option value="juliana">Dra. Juliana</option>
           <option value="marcos">Dr. Marcos</option>
         </select>
       </div>
-      <div>
+
+      <div class="w-full sm:w-auto">
         <label class="text-xs text-gray-500">Status</label>
-        <select x-model="filtro.status" class="border rounded-md px-3 py-1.5 text-sm">
+        <select x-model="filtro.status" class="border rounded-md px-3 py-1.5 text-sm w-full sm:w-auto">
           <option value="">Todos</option>
           <option value="concluido">Concluído</option>
           <option value="cancelado">Cancelado</option>
           <option value="faltou">Faltou</option>
         </select>
       </div>
-      <div class="ml-auto">
-        <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1.5 rounded-md text-sm">
+
+      <div class="w-full sm:w-auto sm:ml-auto">
+        <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1.5 rounded-md text-sm w-full sm:w-auto">
           <i class="fa-solid fa-filter mr-1"></i> Filtrar
         </button>
       </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+    <div class="bg-white rounded-xl shadow overflow-x-auto border border-gray-100">
       <table class="min-w-full text-sm text-gray-700">
         <thead class="bg-gray-50 border-b text-gray-600 uppercase text-xs">
           <tr>
-            <th class="px-4 py-2 text-left">Data</th>
-            <th class="px-4 py-2 text-left">Profissional</th>
-            <th class="px-4 py-2 text-left">Especialidade</th>
-            <th class="px-4 py-2 text-left">Status</th>
-            <th class="px-4 py-2 text-right">Ações</th>
+            <th class="px-4 py-2 text-left whitespace-nowrap">Data</th>
+            <th class="px-4 py-2 text-left whitespace-nowrap">Profissional</th>
+            <th class="px-4 py-2 text-left whitespace-nowrap">Especialidade</th>
+            <th class="px-4 py-2 text-left whitespace-nowrap">Status</th>
+            <th class="px-4 py-2 text-right whitespace-nowrap">Ações</th>
           </tr>
         </thead>
         <tbody>
           @foreach (range(1,5) as $h)
-          <tr class="border-b hover:bg-gray-50">
+          <tr class="border-b hover:bg-gray-50 transition">
             <td class="px-4 py-2">05/11/2025</td>
             <td class="px-4 py-2">Dr. Marcos</td>
             <td class="px-4 py-2">Ortopedia</td>
@@ -130,11 +131,9 @@
     </div>
   </div>
 
-  <!-- ========================= -->
   <!-- MODAL DETALHES -->
-  <!-- ========================= -->
   <div x-show="mostrarModal" x-transition
-       class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+       class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 sm:p-0">
     <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
       <button @click="mostrarModal = false"
               class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
@@ -152,34 +151,26 @@
         <p><strong>Endereço da clínica:</strong> <span x-text="detalhes.endereco"></span></p>
       </div>
 
-      <!-- Timeline estilo iFood -->
+      <!-- Timeline -->
       <div class="mt-6">
         <div class="flex items-center justify-between text-xs text-gray-500">
-          <div class="flex flex-col items-center">
-            <div :class="['w-3 h-3 rounded-full', statusEtapa(1)]"></div>
-            <span class="mt-1">Enviado</span>
-          </div>
-          <div class="flex-1 border-t border-gray-300 mx-2"></div>
-          <div class="flex flex-col items-center">
-            <div :class="['w-3 h-3 rounded-full', statusEtapa(2)]"></div>
-            <span class="mt-1">Aguardando aceite</span>
-          </div>
-          <div class="flex-1 border-t border-gray-300 mx-2"></div>
-          <div class="flex flex-col items-center">
-            <div :class="['w-3 h-3 rounded-full', statusEtapa(3)]"></div>
-            <span class="mt-1">Confirmado</span>
-          </div>
+          <template x-for="(etapa, index) in 3" :key="index">
+            <div class="flex flex-col items-center flex-1">
+              <div :class="['w-3 h-3 rounded-full', statusEtapa(index + 1)]"></div>
+              <span class="mt-1 text-[10px] sm:text-xs" x-text="['Enviado', 'Aguardando aceite', 'Confirmado'][index]"></span>
+            </div>
+          </template>
         </div>
       </div>
 
       <!-- Botões -->
-      <div class="flex justify-end gap-3 mt-6">
+      <div class="flex flex-col sm:flex-row justify-end gap-3 mt-6">
         <button @click="cancelarConsulta"
-                class="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-md">
+                class="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-md flex items-center justify-center gap-1">
           <i class="fa-solid fa-ban"></i> Cancelar
         </button>
-        <a href="{{ route('pacient.schedule') }}"
-           class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-md">
+        <a href="{{ route('client.schedule') }}"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-md flex items-center justify-center gap-1">
           <i class="fa-solid fa-rotate-right"></i> Reagendar
         </a>
       </div>
@@ -187,13 +178,12 @@
   </div>
 </div>
 
-<!-- Dependências -->
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://kit.fontawesome.com/a2d9d6c8b8.js" crossorigin="anonymous"></script>
 
 <script>
-function agendamentosPacient() {
+function agendamentosClient() {
   return {
     aba: 'ativos',
     mostrarModal: false,

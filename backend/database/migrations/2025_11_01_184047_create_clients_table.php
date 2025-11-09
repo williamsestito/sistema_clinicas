@@ -10,51 +10,45 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-
-            // 🔗 Tenant (clínica)
             $table->unsignedBigInteger('tenant_id');
 
-            // 👤 Identificação pessoal
-            $table->string('name', 120);
-            $table->string('social_name', 120)->nullable();
+            // identificação básica
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('name');
+            $table->string('social_name')->nullable();
             $table->boolean('use_social_name')->default(false);
-            $table->string('email', 120)->nullable();
-            $table->string('phone', 20)->nullable();
-            $table->string('document', 14)->nullable(); // CPF
-            $table->string('rg', 20)->nullable();
-            $table->date('birthdate')->nullable();
-            $table->string('gender', 20)->nullable();
-            $table->string('civil_status', 30)->nullable();
 
-            // 🏠 Endereço
-            $table->string('cep', 10)->nullable();
-            $table->string('address', 255)->nullable();
-            $table->string('number', 10)->nullable();
-            $table->string('complement', 100)->nullable();
-            $table->string('district', 100)->nullable();
-            $table->string('city', 100)->nullable();
+            // documentos e perfil
+            $table->string('email')->unique();
+            $table->string('phone')->nullable();
+            $table->string('document')->nullable(); // CPF/CNPJ
+            $table->string('rg')->nullable();
+            $table->date('birthdate')->nullable();
+            $table->string('gender')->nullable();
+            $table->string('civil_status')->nullable();
+
+            // localização
+            $table->string('cep', 12)->nullable();
+            $table->string('address')->nullable();
+            $table->string('number', 20)->nullable();
+            $table->string('complement')->nullable();
+            $table->string('district')->nullable();
+            $table->string('city')->nullable();
             $table->string('state', 2)->nullable();
 
-            // 📋 Preferências e observações
+            // preferências e controles
             $table->boolean('consent_marketing')->default(false);
             $table->text('notes')->nullable();
-
-            // ⚙️ Status
-            $table->boolean('active')->default(true)->comment('Define se o paciente está ativo ou inativo');
+            $table->string('password')->nullable();
+            $table->boolean('active')->default(true);
 
             $table->timestamps();
 
-            // 🔗 Relacionamento com Tenant
-            $table->foreign('tenant_id')
-                  ->references('id')
-                  ->on('tenants')
-                  ->cascadeOnDelete();
-
-            // 📈 Índices úteis
-            $table->index(['tenant_id', 'name']);
-            $table->index('email');
-            $table->index('phone');
-            $table->index('document');
+            // FKs e índices
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+            $table->index(['tenant_id', 'active']);
+            $table->index(['tenant_id', 'city']);
         });
     }
 

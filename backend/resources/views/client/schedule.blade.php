@@ -1,22 +1,26 @@
-@extends('layouts.app')
+@extends('layouts.app_client')
 
 @section('title', 'Agendar Consulta')
 
 @section('content')
-<div x-data="agendamento()" class="p-6 space-y-6">
+<div x-data="agendamento()" class="p-4 sm:p-6 space-y-6">
 
   <!-- Cabeçalho -->
-  <div class="flex flex-col md:flex-row md:items-center justify-between mb-2">
-    <h1 class="text-xl font-semibold text-gray-700">🩺 Agendar Consulta</h1>
-    <p class="text-sm text-gray-500 mt-2 md:mt-0">
-      Escolha um profissional e um horário disponível. O agendamento ficará <b>pendente</b> até confirmação.
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+    <h1 class="text-xl sm:text-2xl font-semibold text-gray-700 flex items-center gap-2">
+      🩺 <span>Agendar Consulta</span>
+    </h1>
+    <p class="text-sm text-gray-500 leading-snug sm:text-right text-justify sm:text-left">
+      Escolha um profissional e um horário disponível.<br class="hidden sm:block">
+      O agendamento ficará <b>pendente</b> até confirmação.
     </p>
   </div>
 
   <!-- Etapa 1: Localização -->
-  <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
-    <h2 class="font-semibold text-gray-800 mb-3">1️⃣ Escolha sua localização</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="bg-white p-4 sm:p-6 rounded-xl shadow border border-gray-100">
+    <h2 class="font-semibold text-gray-800 mb-4 text-base sm:text-lg">1️⃣ Escolha sua localização</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">UF</label>
         <select x-model="uf" @change="carregarCidades()" class="w-full border rounded-md px-3 py-2 text-sm">
@@ -39,11 +43,12 @@
     </div>
   </div>
 
-  <!-- Etapa 2: Profissional / Especialidade / Procedimento -->
+  <!-- Etapa 2 -->
   <template x-if="cidade">
-    <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
-      <h2 class="font-semibold text-gray-800 mb-3">2️⃣ Escolha o profissional, especialidade e procedimento</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white p-4 sm:p-6 rounded-xl shadow border border-gray-100">
+      <h2 class="font-semibold text-gray-800 mb-4 text-base sm:text-lg">2️⃣ Profissional, especialidade e procedimento</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Profissional</label>
           <select x-model="profissional" class="w-full border rounded-md px-3 py-2 text-sm">
@@ -77,46 +82,53 @@
     </div>
   </template>
 
-  <!-- Etapa 3: Escolher data -->
+  <!-- Etapa 3 -->
   <template x-if="profissional && procedimento">
-    <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
-      <h2 class="font-semibold text-gray-800 mb-3">3️⃣ Escolha o dia desejado</h2>
-      <div class="flex items-center gap-3">
-        <input type="date" x-model="dataSelecionada" class="border rounded-md px-3 py-2 text-sm">
-        <button @click="carregarHorarios()" 
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+    <div class="bg-white p-4 sm:p-6 rounded-xl shadow border border-gray-100">
+      <h2 class="font-semibold text-gray-800 mb-4 text-base sm:text-lg">3️⃣ Escolha o dia desejado</h2>
+
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <input type="date"
+               x-model="dataSelecionada"
+               class="border rounded-md px-3 py-2 text-sm w-full sm:w-auto focus:ring-green-200 focus:border-green-400 transition">
+        <button @click="carregarHorarios()"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium w-full sm:w-auto text-center">
           Ver horários disponíveis
         </button>
       </div>
     </div>
   </template>
 
-  <!-- Etapa 4: Agenda -->
+  <!-- Etapa 4 -->
   <template x-if="horarios.length > 0">
-    <div class="bg-white p-6 rounded-lg shadow border border-gray-100">
-      <h2 class="font-semibold text-gray-800 mb-3">
-        4️⃣ Horários disponíveis para <span x-text="dataSelecionada"></span>
+    <div class="bg-white p-4 sm:p-6 rounded-xl shadow border border-gray-100">
+      <h2 class="font-semibold text-gray-800 mb-3 text-base sm:text-lg">
+        4️⃣ Horários disponíveis para
+        <span class="text-green-700 font-medium" x-text="dataSelecionada"></span>
       </h2>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3 mt-3">
         <template x-for="hora in horarios" :key="hora">
           <div @click="selecionarHorario(hora)"
-               class="border rounded-lg px-4 py-2 text-center cursor-pointer transition"
-               :class="horarioSelecionado === hora ? 'bg-green-600 text-white border-green-700' : 'hover:bg-green-50'">
+               class="border rounded-lg px-3 py-2 text-center cursor-pointer transition select-none text-sm"
+               :class="horarioSelecionado === hora
+                 ? 'bg-green-600 text-white border-green-700 shadow-md'
+                 : 'hover:bg-green-50 hover:border-green-300'">
             <span x-text="hora"></span>
           </div>
         </template>
       </div>
 
-      <div class="flex justify-end mt-6">
+      <div class="flex flex-col sm:flex-row justify-end mt-6 gap-3">
         <button @click="confirmarAgendamento"
-                class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md text-sm font-medium">
+                class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md text-sm font-medium w-full sm:w-auto">
           Confirmar Pré-Agendamento
         </button>
       </div>
 
-      <p class="text-xs text-gray-500 mt-3">
-        O agendamento será enviado para o profissional e ficará com status <b>pendente</b> até confirmação.
+      <p class="text-xs text-gray-500 mt-3 text-justify sm:text-left">
+        O agendamento será enviado para o profissional e ficará com status
+        <b>pendente</b> até confirmação.
       </p>
     </div>
   </template>
@@ -136,7 +148,7 @@ function agendamento() {
     dataSelecionada: '',
     horarioSelecionado: '',
     horarios: [],
-    diasBloqueados: ['2025-11-12'], // Exemplo de dia sem atendimento
+    diasBloqueados: ['2025-11-12'],
 
     ufs: [
       { nome: 'Santa Catarina', sigla: 'SC' },
@@ -172,7 +184,6 @@ function agendamento() {
         return;
       }
 
-      // Caso profissional nao libere o dia
       if (this.diasBloqueados.includes(this.dataSelecionada)) {
         this.horarios = [];
         Swal.fire({
@@ -189,7 +200,6 @@ function agendamento() {
         return;
       }
 
-      // Caso normal - ajustaremos com dados do banco 
       this.horarios = ['08:00', '09:00', '10:30', '11:30', '13:00', '14:30', '16:00', '17:30'];
     },
 

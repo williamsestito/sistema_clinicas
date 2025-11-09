@@ -38,7 +38,10 @@ class User extends Authenticatable
         'active',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     protected $casts = [
         'active'            => 'boolean',
@@ -50,23 +53,35 @@ class User extends Authenticatable
     // -------------------------------------------------------------------------
     // Relacionamentos
     // -------------------------------------------------------------------------
-    public function tenant()       { return $this->belongsTo(Tenant::class); }
-    public function professional() { return $this->hasOne(Professional::class); }
-    public function client()       { return $this->hasOne(Client::class); }
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
 
-    // Sempre referencia agendamentos em que o usuário é o cliente (paciente)
+    public function professional()
+    {
+        return $this->hasOne(Professional::class);
+    }
+
+    public function client()
+    {
+        return $this->hasOne(Client::class);
+    }
+
+    // Agendamentos em que o usuário é o cliente (paciente)
     public function appointments()
     {
         return $this->hasMany(Appointment::class, 'client_id', 'id');
     }
 
+    // Logs de alterações em agendamentos realizados por este usuário
     public function appointmentLogs()
     {
         return $this->hasMany(AppointmentLog::class, 'changed_by_user_id', 'id');
     }
 
     // -------------------------------------------------------------------------
-    // Hash automático de senha
+    // Mutators e Acessores
     // -------------------------------------------------------------------------
     protected function password(): Attribute
     {
@@ -77,9 +92,6 @@ class User extends Authenticatable
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Acessores
-    // -------------------------------------------------------------------------
     public function getDisplayNameAttribute(): string
     {
         return ucwords($this->name);
@@ -96,20 +108,46 @@ class User extends Authenticatable
     // -------------------------------------------------------------------------
     // Scopes
     // -------------------------------------------------------------------------
-    public function scopeActive($query) { return $query->where('active', true); }
-    public function scopeOfTenant($query, int $tenantId) { return $query->where('tenant_id', $tenantId); }
-    public function scopeWithRole($query, string $role) { return $query->where('role', $role); }
+    public function scopeActive($query)
+    {
+        return $query->where('active', true);
+    }
+
+    public function scopeOfTenant($query, int $tenantId)
+    {
+        return $query->where('tenant_id', $tenantId);
+    }
+
+    public function scopeWithRole($query, string $role)
+    {
+        return $query->where('role', $role);
+    }
 
     // -------------------------------------------------------------------------
-    // Papéis
+    // Papéis / Perfis
     // -------------------------------------------------------------------------
-    public function isAdmin(): bool        { return in_array($this->role, ['admin', 'owner']); }
-    public function isProfessional(): bool { return $this->role === 'professional'; }
-    public function isFrontdesk(): bool    { return $this->role === 'frontdesk'; }
-    public function isClient(): bool       { return $this->role === 'client'; }
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, ['admin', 'owner']);
+    }
+
+    public function isProfessional(): bool
+    {
+        return $this->role === 'professional';
+    }
+
+    public function isFrontdesk(): bool
+    {
+        return $this->role === 'frontdesk';
+    }
+
+    public function isClient(): bool
+    {
+        return $this->role === 'client';
+    }
 
     // -------------------------------------------------------------------------
-    // Tokens API
+    // Tokens de API
     // -------------------------------------------------------------------------
     public function generateToken(string $device = 'web'): string
     {
@@ -123,7 +161,7 @@ class User extends Authenticatable
     }
 
     // -------------------------------------------------------------------------
-    // Representação e rótulos
+    // Rótulos e Representação Pública
     // -------------------------------------------------------------------------
     public function getRoleLabelAttribute(): string
     {

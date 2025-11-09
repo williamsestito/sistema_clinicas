@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Hash;
 
-class Client extends Model
+class Client extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory;
 
     protected $fillable = [
         'tenant_id',
@@ -31,8 +33,11 @@ class Client extends Model
         'state',
         'consent_marketing',
         'notes',
-        'active', // ✅ IMPORTANTE: habilita edição do status ativo/inativo
+        'password',       // necessário para login
+        'active',
     ];
+
+    protected $hidden = ['password'];
 
     protected $casts = [
         'birthdate' => 'date',
@@ -41,12 +46,16 @@ class Client extends Model
         'active' => 'boolean',
     ];
 
-    // 🔗 Relações
+    // -------------------------------------------------------------------------
+    // Relacionamentos
+    // -------------------------------------------------------------------------
     public function tenant()        { return $this->belongsTo(Tenant::class); }
     public function user()          { return $this->belongsTo(User::class); }
     public function appointments()  { return $this->hasMany(Appointment::class); }
 
-    // 🔍 Scopes
+    // -------------------------------------------------------------------------
+    // Scopes
+    // -------------------------------------------------------------------------
     public function scopeOfTenant($query, int $tenantId)
     {
         return $query->where('tenant_id', $tenantId);
@@ -73,7 +82,9 @@ class Client extends Model
         return $query->orderBy('name', 'asc');
     }
 
-    // 🎨 Helpers
+    // -------------------------------------------------------------------------
+    // Acessores / Mutators
+    // -------------------------------------------------------------------------
     public function getAgeAttribute(): ?int
     {
         return $this->birthdate ? $this->birthdate->age : null;
@@ -94,5 +105,17 @@ class Client extends Model
     public function getMarketingStatusLabelAttribute(): string
     {
         return $this->consent_marketing ? 'Aceitou comunicações' : 'Não aceitou';
+    }
+
+    // -------------------------------------------------------------------------
+    // Mutator para hash automático da senha
+    // -------------------------------------------------------------------------
+    public function setPasswordAttribute($value)
+    {
+        if ($value && !str_starts_with($value, '$2y$')) {
+            $this->attributes['password'] = Hash::make($value);
+        } else {
+            $this->attributes['password'] = $value;
+        }
     }
 }

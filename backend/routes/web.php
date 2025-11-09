@@ -26,10 +26,14 @@ use App\Http\Controllers\{
 |--------------------------------------------------------------------------
 */
 Route::get('/', fn() => redirect()->route('login'));
+
+// Autenticação e registro
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::get('/register', [RegisterController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register'])->name('register.post');
+
+// Recuperação de senha
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
@@ -37,12 +41,16 @@ Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name(
 
 /*
 |--------------------------------------------------------------------------
-| Rotas Autenticadas
+| Áreas autenticadas
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->group(function () {
 
-    // Dashboard e agenda do admin
+// ===================================
+// ADMIN E PROFISSIONAIS (Guard: web)
+// ===================================
+Route::middleware(['auth:web'])->group(function () {
+
+    // Dashboard / Agenda
     Route::view('/admin/dashboard', 'admin.dashboard')->name('dashboard');
     Route::view('/admin/agenda', 'admin.agenda')->name('agenda');
 
@@ -85,7 +93,7 @@ Route::middleware(['auth'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [ProfessionalDashboardController::class, 'index'])->name('dashboard');
 
-        // Pacientes do profissional
+        // Pacientes
         Route::get('/pacients', [ProfessionalPacientController::class, 'index'])->name('pacients');
         Route::get('/pacients/{id}', [ProfessionalPacientController::class, 'show'])->name('pacients.show');
 
@@ -115,17 +123,20 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/profile/update', [ProfessionalProfileController::class, 'update'])->name('profile.update');
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Área do Paciente
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('pacient')->name('pacient.')->group(function () {
-        Route::view('/appointments', 'pacient.appointments')->name('appointments');
-        Route::view('/schedule', 'pacient.schedule')->name('schedule');
-        Route::view('/profile', 'pacient.profile')->name('profile');
-    });
+    // Logout unificado
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+});
 
-    // Logout
+// ===================================
+// PACIENTES (Guard: client)
+// ===================================
+Route::middleware(['auth:client'])->prefix('client')->name('client.')->group(function () {
+
+    Route::view('/dashboard', 'client.dashboard')->name('dashboard');
+    Route::view('/appointments', 'client.appointments')->name('appointments');
+    Route::view('/schedule', 'client.schedule')->name('schedule');
+    Route::view('/profile', 'client.profile')->name('profile');
+
+    // Logout para clientes
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

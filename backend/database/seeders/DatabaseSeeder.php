@@ -154,11 +154,19 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Maria Silva',  'email' => 'maria@cliente.com',  'phone' => '11999998888'],
             ['name' => 'João Souza',   'email' => 'joao@cliente.com',   'phone' => '11988887777'],
             ['name' => 'Ana Pereira',  'email' => 'ana@cliente.com',    'phone' => '11977776666'],
-        ])->map(fn($c) => Client::firstOrCreate(array_merge($c, [
-            'tenant_id' => $tenant->id,
-            'birthdate' => '1990-05-12',
-            'consent_marketing' => true,
-        ])));
+        ])->map(function ($c) use ($tenant) {
+            return Client::firstOrCreate(
+                ['email' => $c['email']],
+                [
+                    'tenant_id' => $tenant->id,
+                    'name' => $c['name'],
+                    'phone' => $c['phone'],
+                    'birthdate' => '1990-05-12',
+                    'consent_marketing' => true,
+                    'password' => Hash::make('123123'),
+                ]
+            );
+        });
 
         // Agendamentos
         $now = Carbon::now();
@@ -214,6 +222,6 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Tenant padrão: Clínica Principal');
         $this->command->info('Admin: admin@admin.com | senha: 123123');
         $this->command->info('Profissionais: dra.juliana@clinica.com / dr.marcos@clinica.com');
-        $this->command->info('Clientes: maria@cliente.com, joao@cliente.com, ana@cliente.com');
+        $this->command->info('Clientes: maria@cliente.com, joao@cliente.com, ana@cliente.com | senha: 123123');
     }
 }
