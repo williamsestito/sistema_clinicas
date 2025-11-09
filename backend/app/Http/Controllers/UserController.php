@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Professional;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -11,13 +12,14 @@ use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
     /**
-     * Listagem em JSON (API)
+     * Listagem JSON (API)
      */
     public function index(Request $request)
     {
         $authUser = Auth::user();
 
-        $query = User::when($authUser->tenant_id, fn($q) => $q->where('tenant_id', $authUser->tenant_id))
+        $query = User::query()
+            ->when($authUser->tenant_id, fn($q) => $q->where('tenant_id', $authUser->tenant_id))
             ->when($request->role, fn($q) => $q->where('role', $request->role))
             ->when(!is_null($request->active), fn($q) => $q->where('active', $request->active))
             ->orderBy('name');
@@ -26,7 +28,7 @@ class UserController extends Controller
     }
 
     /**
-     * Listagem em view (painel administrativo)
+     * Listagem em view
      */
     public function listView(Request $request)
     {
@@ -37,28 +39,25 @@ class UserController extends Controller
             ->where('role', '!=', 'client')
             ->when($request->role, fn($q) => $q->where('role', $request->role))
             ->when($request->filled('active'), fn($q) => $q->where('active', $request->active))
-            ->when($request->search, function ($q) use ($request) {
+            ->when($request->search, fn($q) =>
                 $q->where(function ($sub) use ($request) {
                     $sub->where('name', 'like', "%{$request->search}%")
                         ->orWhere('email', 'like', "%{$request->search}%");
-                });
-            })
+                })
+            )
             ->orderBy('name')
             ->paginate(10);
 
         return view('employees.employees', compact('usuarios'));
     }
 
-    /**
-     * Formulário de criação
-     */
     public function create()
     {
         return view('employees.create');
     }
 
     /**
-     * Cadastra novo colaborador
+     * Cria novo colaborador
      */
     public function store(Request $request)
     {
@@ -71,11 +70,9 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|in:owner,admin,professional,frontdesk',
-
-            // Novos campos opcionais
+            'phone' => 'nullable|string|max:20',
             'birth_date' => 'nullable|date',
             'document' => 'nullable|string|max:14',
             'rg' => 'nullable|string|max:20',
@@ -96,23 +93,27 @@ class UserController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        User::create(array_merge(
+        $user = User::create(array_merge(
             $validator->validated(),
             [
                 'tenant_id' => $authUser->tenant_id ?? 1,
-                'password' => Hash::make($request->password),
                 'active' => true,
             ]
         ));
 
-        return redirect()
-            ->route('employees.index')
+        // 🔧 Cria o registro do profissional automaticamente
+        if ($user->role === 'professional') {
+            Professional::create([
+                'tenant_id' => $user->tenant_id,
+                'user_id'   => $user->id,
+                'active'    => true,
+            ]);
+        }
+
+        return redirect()->route('employees.index')
             ->with('success', '✅ Colaborador cadastrado com sucesso.');
     }
 
-    /**
-     * Formulário de edição
-     */
     public function edit($id)
     {
         $authUser = Auth::user();
@@ -136,18 +137,16 @@ class UserController extends Controller
             ->findOrFail($id);
 
         if (!in_array($authUser->role, ['owner', 'admin'])) {
-            return back()->with('error', 'Acesso negado. Apenas administradores podem editar colaboradores.');
+            return back()->with('error', 'Apenas administradores podem editar colaboradores.');
         }
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:120',
             'email' => 'required|email|unique:users,email,' . $usuario->id,
-            'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6|confirmed',
             'role' => 'required|in:owner,admin,professional,frontdesk',
+            'phone' => 'nullable|string|max:20',
             'active' => 'nullable|boolean',
-
-            // Campos adicionais
             'birth_date' => 'nullable|date',
             'document' => 'nullable|string|max:14',
             'rg' => 'nullable|string|max:20',
@@ -169,22 +168,16 @@ class UserController extends Controller
         }
 
         $data = $validator->validated();
-
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
-        } else {
-            unset($data['password']);
-        }
+        if ($request->filled('password')) $data['password'] = Hash::make($request->password);
 
         $usuario->update($data);
 
-        return redirect()
-            ->route('employees.index')
+        return redirect()->route('employees.index')
             ->with('success', '✅ Colaborador atualizado com sucesso.');
     }
 
     /**
-     * Exclui colaborador
+     * Remove colaborador e registro de profissional (se houver)
      */
     public function destroy($id)
     {
@@ -195,17 +188,21 @@ class UserController extends Controller
             ->findOrFail($id);
 
         if (!in_array($authUser->role, ['owner', 'admin'])) {
-            return back()->with('error', 'Acesso negado. Apenas administradores podem excluir colaboradores.');
+            return back()->with('error', 'Apenas administradores podem excluir colaboradores.');
         }
 
         if ($usuario->role === 'owner') {
             return back()->with('error', 'Não é permitido excluir o proprietário da clínica.');
         }
 
+        // Remove profissional vinculado (se existir)
+        if ($usuario->role === 'professional' && $usuario->professional) {
+            $usuario->professional->delete();
+        }
+
         $usuario->delete();
 
-        return redirect()
-            ->route('employees.index')
+        return redirect()->route('employees.index')
             ->with('success', '🗑️ Colaborador excluído com sucesso.');
     }
 }

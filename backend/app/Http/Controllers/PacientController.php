@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class PacientController extends Controller
@@ -13,18 +12,12 @@ class PacientController extends Controller
     public function index(Request $request)
     {
         $authUser = Auth::user();
+        $tenantId = $authUser->tenant_id;
 
-        $pacients = User::query()
-            ->where('role', 'client')
-            ->when($authUser->tenant_id, fn($q) => $q->where('tenant_id', $authUser->tenant_id))
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $q->where(function ($sub) use ($request) {
-                    $sub->where('name', 'like', "%{$request->search}%")
-                        ->orWhere('email', 'like', "%{$request->search}%")
-                        ->orWhere('phone', 'like', "%{$request->search}%");
-                });
-            })
-            ->orderBy('name')
+        $pacients = Client::query()
+            ->ofTenant($tenantId)
+            ->search($request->input('search'))
+            ->ordered()
             ->paginate(15);
 
         return view('pacients.index', compact('pacients'));
@@ -41,35 +34,21 @@ class PacientController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:120',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:clients,email',
             'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:6|confirmed',
-            'birth_date' => 'nullable|date',
-            'document' => 'nullable|string|max:14',
-            'rg' => 'nullable|string|max:20',
-            'gender' => 'nullable|string|max:20',
-            'cep' => 'nullable|string|max:10',
-            'address' => 'nullable|string|max:255',
-            'number' => 'nullable|string|max:10',
-            'district' => 'nullable|string|max:100',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:2',
-            'social_name' => 'nullable|boolean',
-            'social_name_text' => 'nullable|string|max:120',
+            'birthdate' => 'nullable|date',
+            'consent_marketing' => 'boolean',
+            'notes' => 'nullable|string|max:500',
+            'active' => 'boolean', // ✅ campo incluído
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        User::create(array_merge(
+        Client::create(array_merge(
             $validator->validated(),
-            [
-                'tenant_id' => $authUser->tenant_id ?? 1,
-                'role' => 'client',
-                'password' => Hash::make($request->password),
-                'active' => true,
-            ]
+            ['tenant_id' => $authUser->tenant_id]
         ));
 
         return redirect()
@@ -80,11 +59,7 @@ class PacientController extends Controller
     public function edit($id)
     {
         $authUser = Auth::user();
-
-        $pacient = User::query()
-            ->where('role', 'client')
-            ->when($authUser->tenant_id, fn($q) => $q->where('tenant_id', $authUser->tenant_id))
-            ->findOrFail($id);
+        $pacient = Client::ofTenant($authUser->tenant_id)->findOrFail($id);
 
         return view('pacients.edit', compact('pacient'));
     }
@@ -92,57 +67,33 @@ class PacientController extends Controller
     public function update(Request $request, $id)
     {
         $authUser = Auth::user();
-
-        $pacient = User::query()
-            ->where('role', 'client')
-            ->when($authUser->tenant_id, fn($q) => $q->where('tenant_id', $authUser->tenant_id))
-            ->findOrFail($id);
+        $pacient = Client::ofTenant($authUser->tenant_id)->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:120',
-            'email' => 'required|email|unique:users,email,' . $pacient->id,
+            'email' => 'nullable|email|unique:clients,email,' . $pacient->id,
             'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:6|confirmed',
-            'birth_date' => 'nullable|date',
-            'document' => 'nullable|string|max:14',
-            'rg' => 'nullable|string|max:20',
-            'gender' => 'nullable|string|max:20',
-            'cep' => 'nullable|string|max:10',
-            'address' => 'nullable|string|max:255',
-            'number' => 'nullable|string|max:10',
-            'district' => 'nullable|string|max:100',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:2',
-            'social_name' => 'nullable|boolean',
-            'social_name_text' => 'nullable|string|max:120',
-            'active' => 'nullable|boolean',
+            'birthdate' => 'nullable|date',
+            'consent_marketing' => 'boolean',
+            'notes' => 'nullable|string|max:500',
+            'active' => 'boolean', // ✅ incluído também no update
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $data = $validator->validated();
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
-        }
-
-        $pacient->update($data);
+        $pacient->update($validator->validated());
 
         return redirect()
             ->route('pacients.index')
-            ->with('success', 'Paciente atualizado com sucesso.');
+            ->with('success', '✅ Paciente atualizado com sucesso.');
     }
 
     public function destroy($id)
     {
         $authUser = Auth::user();
-
-        $pacient = User::query()
-            ->where('role', 'client')
-            ->when($authUser->tenant_id, fn($q) => $q->where('tenant_id', $authUser->tenant_id))
-            ->findOrFail($id);
-
+        $pacient = Client::ofTenant($authUser->tenant_id)->findOrFail($id);
         $pacient->delete();
 
         return redirect()

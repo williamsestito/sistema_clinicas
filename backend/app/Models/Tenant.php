@@ -7,16 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * @mixin IdeHelperTenant
- */
 class Tenant extends Model
 {
     use HasFactory;
 
-    /**
-     * Campos preenchíveis em massa.
-     */
     protected $fillable = [
         'name',
         'cnpj',
@@ -28,68 +22,30 @@ class Tenant extends Model
         'settings',
     ];
 
-    /**
-     * Conversões automáticas de tipo.
-     */
     protected $casts = [
         'settings' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
-    /**
-     * Relações
-     * ======================================
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | 🔗 RELACIONAMENTOS
+    |--------------------------------------------------------------------------
+    */
+    public function owner()         { return $this->belongsTo(User::class, 'owner_user_id'); }
+    public function users()         { return $this->hasMany(User::class); }
+    public function clients()       { return $this->hasMany(Client::class); }
+    public function professionals() { return $this->hasMany(Professional::class); }
+    public function services()      { return $this->hasMany(Service::class); }
+    public function appointments()  { return $this->hasMany(Appointment::class); }
+    public function siteSettings()  { return $this->hasOne(SiteSetting::class); }
 
-    // 🔹 Usuário dono (owner)
-    public function owner()
-    {
-        return $this->belongsTo(User::class, 'owner_user_id');
-    }
-
-    // 🔹 Usuários vinculados à clínica
-    public function users()
-    {
-        return $this->hasMany(User::class);
-    }
-
-    // 🔹 Clientes
-    public function clients()
-    {
-        return $this->hasMany(Client::class);
-    }
-
-    // 🔹 Profissionais
-    public function professionals()
-    {
-        return $this->hasMany(Professional::class);
-    }
-
-    // 🔹 Serviços oferecidos
-    public function services()
-    {
-        return $this->hasMany(Service::class);
-    }
-
-    // 🔹 Agendamentos
-    public function appointments()
-    {
-        return $this->hasMany(Appointment::class);
-    }
-
-    // 🔹 Configurações de site público
-    public function siteSettings()
-    {
-        return $this->hasOne(SiteSetting::class);
-    }
-
-    /**
-     * Accessors e atributos computados
-     * ======================================
-     */
-
-    // 🖼️ Logo da clínica (URL completa)
+    /*
+    |--------------------------------------------------------------------------
+    | 🧠 ACCESSORS E COMPUTED FIELDS
+    |--------------------------------------------------------------------------
+    */
     public function logoUrl(): Attribute
     {
         return Attribute::make(
@@ -97,12 +53,11 @@ class Tenant extends Model
                 $value
                     ? (preg_match('/^https?:\/\//', $value)
                         ? $value
-                        : Storage::url($value))
+                        : Storage::disk('public')->url($value))
                     : asset('images/default-logo.png')
         );
     }
 
-    // 🎨 Cores com fallback padrão
     public function getPrimaryColorAttribute($value): string
     {
         return $value ?: '#004d40';
@@ -113,42 +68,36 @@ class Tenant extends Model
         return $value ?: '#009688';
     }
 
-    // 🧠 Retorna nome formatado para exibição
     public function getDisplayNameAttribute(): string
     {
         return ucfirst($this->name);
     }
 
-    // 🗓️ Data de criação formatada
     public function getCreatedAtFormattedAttribute(): string
     {
         return $this->created_at?->format('d/m/Y H:i') ?? '-';
     }
 
-    /**
-     * Scopes
-     * ======================================
-     */
-
-    // 🔍 Busca por nome
+    /*
+    |--------------------------------------------------------------------------
+    | 🔍 SCOPES
+    |--------------------------------------------------------------------------
+    */
     public function scopeSearch($query, ?string $term)
     {
-        if (!$term) return $query;
-        return $query->where('name', 'like', "%{$term}%");
+        return $term ? $query->where('name', 'like', "%{$term}%") : $query;
     }
 
-    // 🔍 Ordenar por nome
     public function scopeOrdered($query)
     {
         return $query->orderBy('name');
     }
 
-    /**
-     * Helpers
-     * ======================================
-     */
-
-    // 🏢 Criação de tenant com usuário proprietário
+    /*
+    |--------------------------------------------------------------------------
+    | ⚙️ HELPERS
+    |--------------------------------------------------------------------------
+    */
     public static function createWithOwner(array $tenantData, array $ownerData): self
     {
         $tenant = self::create($tenantData);
@@ -160,7 +109,6 @@ class Tenant extends Model
         return $tenant->fresh(['owner']);
     }
 
-    // ⚙️ Atualizar configurações (JSON)
     public function updateSettings(array $data): self
     {
         $settings = $this->settings ?? [];
@@ -169,16 +117,14 @@ class Tenant extends Model
         return $this;
     }
 
-    // 🧩 Retornar paleta de cores do tenant
     public function palette(): array
     {
         return [
-            'primary' => $this->primary_color,
+            'primary'   => $this->primary_color,
             'secondary' => $this->secondary_color,
         ];
     }
 
-    // 🔍 Localizar tenant por domínio ou subdomínio
     public static function findByDomain(string $host): ?self
     {
         return self::whereJsonContains('settings->domains', $host)->first();

@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('note', 255)->nullable();
             $table->timestamps();
 
-            // 🔗 Relacionamentos
             $table->foreign('appointment_id')
                 ->references('id')
                 ->on('appointments')
