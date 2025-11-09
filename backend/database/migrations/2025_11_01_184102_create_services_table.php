@@ -15,7 +15,8 @@ return new class extends Migration
             $table->string('name', 160);
             $table->text('description')->nullable();
             $table->integer('duration_min')->default(30);
-            $table->decimal('price', 10, 2);
+            $table->decimal('price', 10, 2)->default(0);
+            $table->boolean('visible_to_clients')->default(true);
             $table->boolean('active')->default(true);
             $table->timestamps();
 

@@ -30,16 +30,29 @@ class RegisterController extends Controller
         }
 
         $authUser = Auth::user();
+
         if ($authUser) {
+            // Cadastro feito por admin logado (painel)
             $tenantId = $authUser->tenant_id;
             $role = 'client';
         } else {
-            $tenant = Tenant::create([
-                'name'   => $request->name . ' - Clínica',
-                'active' => true,
-            ]);
-            $tenantId = $tenant->id;
-            $role = 'owner';
+            // Cadastro público (sem login)
+            $tenantId = User::whereIn('role', ['owner', 'admin'])
+                            ->where('active', true)
+                            ->value('tenant_id');
+
+            if ($tenantId) {
+                // Já existe tenant — cria como cliente
+                $role = 'client';
+            } else {
+                // Nenhum tenant ainda — primeiro usuário é o dono (instalação inicial)
+                $tenant = Tenant::create([
+                    'name'   => $request->name . ' - Clínica',
+                    'active' => true,
+                ]);
+                $tenantId = $tenant->id;
+                $role = 'owner';
+            }
         }
 
         $user = User::create([
@@ -51,12 +64,14 @@ class RegisterController extends Controller
             'active'    => true,
         ]);
 
-        if (!$authUser) {
+        if ($authUser) {
             return redirect()
-                ->route('login')
-                ->with('success', '✅ Cadastro realizado com sucesso! Faça login para continuar.');
+                ->route('dashboard')
+                ->with('success', 'Paciente cadastrado com sucesso.');
         }
 
-        return redirect()->route('dashboard')->with('success', 'Usuário criado com sucesso.');
+        return redirect()
+            ->route('login')
+            ->with('success', 'Cadastro realizado com sucesso! Faça login para continuar.');
     }
 }

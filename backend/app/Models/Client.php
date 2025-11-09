@@ -2,66 +2,65 @@
 
 namespace App\Models;
 
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Hash;
 
-/**
- * @mixin IdeHelperClient
- */
-class Client extends Model
+class Client extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory;
 
-    /**
-     * Atributos que podem ser preenchidos em massa.
-     */
     protected $fillable = [
         'tenant_id',
+        'user_id',
         'name',
+        'social_name',
+        'use_social_name',
         'email',
         'phone',
+        'document',
+        'rg',
         'birthdate',
+        'gender',
+        'civil_status',
+        'cep',
+        'address',
+        'number',
+        'complement',
+        'district',
+        'city',
+        'state',
         'consent_marketing',
         'notes',
+        'password',       // necessário para login
+        'active',
     ];
 
-    /**
-     * Conversões automáticas de tipo.
-     */
+    protected $hidden = ['password'];
+
     protected $casts = [
         'birthdate' => 'date',
         'consent_marketing' => 'boolean',
+        'use_social_name' => 'boolean',
+        'active' => 'boolean',
     ];
 
-    /**
-     * Relações
-     * ======================================
-     */
+    // -------------------------------------------------------------------------
+    // Relacionamentos
+    // -------------------------------------------------------------------------
+    public function tenant()        { return $this->belongsTo(Tenant::class); }
+    public function user()          { return $this->belongsTo(User::class); }
+    public function appointments()  { return $this->hasMany(Appointment::class); }
 
-    // 🔹 Tenant (Clínica)
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class);
-    }
-
-    // 🔹 Agendamentos do cliente
-    public function appointments()
-    {
-        return $this->hasMany(Appointment::class);
-    }
-
-    /**
-     * Scopes e Helpers
-     * ======================================
-     */
-
-    // 🔍 Filtro por Tenant
+    // -------------------------------------------------------------------------
+    // Scopes
+    // -------------------------------------------------------------------------
     public function scopeOfTenant($query, int $tenantId)
     {
         return $query->where('tenant_id', $tenantId);
     }
 
-    // 🔍 Busca por nome, e-mail ou telefone
     public function scopeSearch($query, ?string $term)
     {
         if (!$term) return $query;
@@ -73,57 +72,50 @@ class Client extends Model
         });
     }
 
-    // 🔍 Clientes com consentimento para marketing
     public function scopeMarketingOptIn($query)
     {
         return $query->where('consent_marketing', true);
     }
 
-    // 🔍 Ordenar por nome
     public function scopeOrdered($query)
     {
         return $query->orderBy('name', 'asc');
     }
 
-    /**
-     * Helpers e Accessors
-     * ======================================
-     */
-
-    // 📅 Idade do cliente
+    // -------------------------------------------------------------------------
+    // Acessores / Mutators
+    // -------------------------------------------------------------------------
     public function getAgeAttribute(): ?int
     {
         return $this->birthdate ? $this->birthdate->age : null;
     }
 
-    // 📱 Telefone formatado
     public function getFormattedPhoneAttribute(): string
     {
-        if (!$this->phone) return '-';
-        $digits = preg_replace('/\D/', '', $this->phone);
+        $digits = preg_replace('/\D/', '', $this->phone ?? '');
+        if (!$digits) return '-';
 
-        if (strlen($digits) === 11) {
-            return sprintf('(%s) %s-%s',
-                substr($digits, 0, 2),
-                substr($digits, 2, 5),
-                substr($digits, 7)
-            );
-        }
-
-        if (strlen($digits) === 10) {
-            return sprintf('(%s) %s-%s',
-                substr($digits, 0, 2),
-                substr($digits, 2, 4),
-                substr($digits, 6)
-            );
-        }
-
-        return $this->phone;
+        return match (strlen($digits)) {
+            11 => sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 5), substr($digits, 7)),
+            10 => sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 4), substr($digits, 6)),
+            default => $this->phone,
+        };
     }
 
-    // 🧾 Status de consentimento
     public function getMarketingStatusLabelAttribute(): string
     {
         return $this->consent_marketing ? 'Aceitou comunicações' : 'Não aceitou';
+    }
+
+    // -------------------------------------------------------------------------
+    // Mutator para hash automático da senha
+    // -------------------------------------------------------------------------
+    public function setPasswordAttribute($value)
+    {
+        if ($value && !str_starts_with($value, '$2y$')) {
+            $this->attributes['password'] = Hash::make($value);
+        } else {
+            $this->attributes['password'] = $value;
+        }
     }
 }

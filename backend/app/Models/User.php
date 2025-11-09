@@ -18,8 +18,22 @@ class User extends Authenticatable
         'tenant_id',
         'role',
         'name',
+        'social_name',
+        'social_name_text',
+        'birth_date',
+        'document',
+        'rg',
+        'civil_status',
+        'gender',
         'email',
         'phone',
+        'cep',
+        'address',
+        'number',
+        'complement',
+        'district',
+        'city',
+        'state',
         'password',
         'active',
     ];
@@ -30,10 +44,15 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'active' => 'boolean',
+        'active'            => 'boolean',
+        'social_name'       => 'boolean',
+        'birth_date'        => 'date',
         'email_verified_at' => 'datetime',
     ];
 
+    // -------------------------------------------------------------------------
+    // Relacionamentos
+    // -------------------------------------------------------------------------
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);
@@ -44,16 +63,26 @@ class User extends Authenticatable
         return $this->hasOne(Professional::class);
     }
 
+    public function client()
+    {
+        return $this->hasOne(Client::class);
+    }
+
+    // Agendamentos em que o usuário é o cliente (paciente)
     public function appointments()
     {
-        return $this->hasMany(Appointment::class, 'professional_id');
+        return $this->hasMany(Appointment::class, 'client_id', 'id');
     }
 
+    // Logs de alterações em agendamentos realizados por este usuário
     public function appointmentLogs()
     {
-        return $this->hasMany(AppointmentLog::class, 'changed_by_user_id');
+        return $this->hasMany(AppointmentLog::class, 'changed_by_user_id', 'id');
     }
 
+    // -------------------------------------------------------------------------
+    // Mutators e Acessores
+    // -------------------------------------------------------------------------
     protected function password(): Attribute
     {
         return Attribute::make(
@@ -71,12 +100,14 @@ class User extends Authenticatable
     public function getPhoneFormattedAttribute(): ?string
     {
         $num = preg_replace('/\D/', '', $this->phone ?? '');
-        if (strlen($num) === 11) {
-            return sprintf('(%s) %s-%s', substr($num, 0, 2), substr($num, 2, 5), substr($num, 7));
-        }
-        return $this->phone;
+        return strlen($num) === 11
+            ? sprintf('(%s) %s-%s', substr($num, 0, 2), substr($num, 2, 5), substr($num, 7))
+            : $this->phone;
     }
 
+    // -------------------------------------------------------------------------
+    // Scopes
+    // -------------------------------------------------------------------------
     public function scopeActive($query)
     {
         return $query->where('active', true);
@@ -92,6 +123,9 @@ class User extends Authenticatable
         return $query->where('role', $role);
     }
 
+    // -------------------------------------------------------------------------
+    // Papéis / Perfis
+    // -------------------------------------------------------------------------
     public function isAdmin(): bool
     {
         return in_array($this->role, ['admin', 'owner']);
@@ -112,6 +146,9 @@ class User extends Authenticatable
         return $this->role === 'client';
     }
 
+    // -------------------------------------------------------------------------
+    // Tokens de API
+    // -------------------------------------------------------------------------
     public function generateToken(string $device = 'web'): string
     {
         $this->tokens()->delete();
@@ -123,28 +160,33 @@ class User extends Authenticatable
         $this->tokens()->delete();
     }
 
+    // -------------------------------------------------------------------------
+    // Rótulos e Representação Pública
+    // -------------------------------------------------------------------------
     public function getRoleLabelAttribute(): string
     {
         return match ($this->role) {
-            'owner' => 'Proprietário',
-            'admin' => 'Administrador',
+            'owner'        => 'Proprietário',
+            'admin'        => 'Administrador',
             'professional' => 'Profissional',
-            'frontdesk' => 'Recepção',
-            'client' => 'Cliente',
-            default => ucfirst($this->role ?? 'Usuário'),
+            'frontdesk'    => 'Recepção',
+            'client'       => 'Cliente',
+            default        => ucfirst($this->role ?? 'Usuário'),
         };
     }
 
     public function toPublicArray(): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->display_name,
-            'email' => $this->email,
-            'role' => $this->role,
-            'role_label' => $this->role_label,
-            'phone' => $this->phone_formatted,
-            'active' => $this->active,
+            'id'          => $this->id,
+            'name'        => $this->display_name,
+            'email'       => $this->email,
+            'role'        => $this->role,
+            'role_label'  => $this->role_label,
+            'phone'       => $this->phone_formatted,
+            'active'      => $this->active,
+            'city'        => $this->city,
+            'state'       => $this->state,
         ];
     }
 }

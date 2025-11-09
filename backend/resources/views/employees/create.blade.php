@@ -4,19 +4,19 @@
 <div class="p-6">
   <div class="flex justify-between items-center mb-4">
     <h1 class="text-xl font-semibold text-gray-700">Novo Colaborador</h1>
-    <a href="{{ route('employees.index') }}" 
-       class="text-sm text-blue-600 hover:underline">← Voltar para lista</a>
+    <a href="{{ route('employees.index') }}" class="text-sm text-blue-600 hover:underline">← Voltar para lista</a>
   </div>
 
   <div x-data="{ aba: 'pessoal' }" class="bg-white rounded-lg shadow p-6">
 
+    <!-- Abas -->
     <div class="flex border-b border-gray-200 mb-4">
-      <button @click="aba = 'pessoal'" 
+      <button @click="aba = 'pessoal'"
               :class="aba === 'pessoal' ? 'border-b-2 border-green-600 text-green-700' : 'text-gray-500'"
               class="px-4 py-2 text-sm font-medium focus:outline-none">
         Dados Pessoais
       </button>
-      <button @click="aba = 'localizacao'" 
+      <button @click="aba = 'localizacao'"
               :class="aba === 'localizacao' ? 'border-b-2 border-green-600 text-green-700' : 'text-gray-500'"
               class="px-4 py-2 text-sm font-medium focus:outline-none">
         Dados de Localização
@@ -26,14 +26,30 @@
     <form method="POST" action="{{ route('employees.store') }}" class="space-y-4">
       @csrf
 
-
+      <!-- Aba: Dados Pessoais -->
       <div x-show="aba === 'pessoal'" x-transition>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-          <div>
-            <label class="text-sm text-gray-600">Nome</label>
-            <input type="text" name="name" required
-                   class="w-full border rounded-md px-3 py-2 text-sm">
+          <!-- Nome + checkbox na mesma linha -->
+          <div x-data="{ usarNomeSocial: false }" class="md:col-span-3">
+            <input type="hidden" name="social_name" :value="usarNomeSocial ? 1 : 0">
+            <div class="flex items-end gap-3">
+              <div class="flex-1">
+                <label class="text-sm text-gray-600">Nome</label>
+                <input type="text" name="name" required
+                       class="w-full border rounded-md px-3 py-2 text-sm mt-1">
+              </div>
+              <div class="shrink-0 min-w-[150px] flex items-center gap-2 mb-1">
+                <input type="checkbox" x-model="usarNomeSocial" class="rounded text-green-600">
+                <span class="text-sm text-gray-700 select-none">É nome social?</span>
+              </div>
+            </div>
+            <div x-show="usarNomeSocial" x-transition class="mt-2">
+              <input type="text" name="social_name_text"
+                     placeholder="Digite o nome social"
+                     class="w-full border rounded-md px-3 py-2 text-sm">
+              <p class="text-xs text-gray-500 mt-1">* Utilizado em comunicações internas conforme a LGPD.</p>
+            </div>
           </div>
 
           <div>
@@ -42,12 +58,7 @@
                    class="w-full border rounded-md px-3 py-2 text-sm">
           </div>
 
-          <div class="flex items-center space-x-2 mt-6">
-            <input type="checkbox" name="social_name" class="rounded text-green-600">
-            <span class="text-sm text-gray-700">É nome social?</span>
-          </div>
-
-    
+          <!-- CPF com validação -->
           <div x-data="{ cpfValido: true }">
             <label class="text-sm text-gray-600">Documento (CPF)</label>
             <input type="text" name="document" maxlength="14"
@@ -57,23 +68,6 @@
                    class="w-full border rounded-md px-3 py-2 text-sm"
                    placeholder="000.000.000-00">
             <p x-show="!cpfValido" class="text-red-600 text-xs mt-1">CPF inválido</p>
-
-            <script>
-              function validarCPF(valor) {
-                const cpf = valor.replace(/[^\d]+/g, '');
-                if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-                let soma = 0, resto;
-                for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i-1, i)) * (11 - i);
-                resto = (soma * 10) % 11;
-                if (resto === 10 || resto === 11) resto = 0;
-                if (resto !== parseInt(cpf.substring(9, 10))) return false;
-                soma = 0;
-                for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i-1, i)) * (12 - i);
-                resto = (soma * 10) % 11;
-                if (resto === 10 || resto === 11) resto = 0;
-                return resto === parseInt(cpf.substring(10, 11));
-              }
-            </script>
           </div>
 
           <div>
@@ -127,7 +121,7 @@
             </select>
           </div>
 
-    
+          <!-- Senha -->
           <div x-data="{ show: false }">
             <label class="text-sm text-gray-600">Senha</label>
             <div class="relative">
@@ -155,7 +149,7 @@
         </div>
       </div>
 
-
+      <!-- Aba: Localização -->
       <div x-show="aba === 'localizacao'" x-transition>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -193,7 +187,7 @@
         </div>
       </div>
 
-      <div class="flex justify-end">
+      <div class="flex justify-end mt-4">
         <button type="submit"
                 class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md text-sm font-medium">
           Salvar Colaborador
@@ -201,7 +195,8 @@
       </div>
     </form>
   </div>
-</div
+</div>
+
 <script src="https://kit.fontawesome.com/a2d9d6c8b8.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@alpinejs/mask@3.x.x/dist/cdn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -209,25 +204,36 @@
 <script>
 document.addEventListener('alpine:init', () => Alpine.plugin(window.Mask));
 
-// Fallbacks de CEP
+function validarCPF(valor) {
+  const cpf = valor.replace(/[^\d]+/g, '');
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let soma = 0, resto;
+  for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i-1, i)) * (11 - i);
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== parseInt(cpf.substring(9, 10))) return false;
+  soma = 0;
+  for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i-1, i)) * (12 - i);
+  resto = (soma * 10) % 11;
+  if (resto === 10 || resto === 11) resto = 0;
+  return resto === parseInt(cpf.substring(10, 11));
+}
+
 async function buscarEndereco() {
   const cepInput = document.getElementById('cep');
   if (!cepInput) return;
   const cep = cepInput.value.replace(/\D/g, '');
   if (cep.length !== 8) return;
-
   const apis = [
     `https://cep.awesomeapi.com.br/json/${cep}`,
     `https://viacep.com.br/ws/${cep}/json/`,
     `https://cdn.apicep.com/file/apicep/${cep}.json`
   ];
-
   for (const api of apis) {
     try {
       const res = await fetch(api);
       if (!res.ok) continue;
       const data = await res.json();
-
       if (data && (data.address || data.logradouro || data.street)) {
         document.getElementById('address').value = data.address || data.logradouro || data.street || '';
         document.getElementById('district').value = data.district || data.bairro || '';

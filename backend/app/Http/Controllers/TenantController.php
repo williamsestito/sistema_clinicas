@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tenant;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -14,8 +13,7 @@ class TenantController extends Controller
     public function index()
     {
         $user = Auth::user();
-
-        if ($user->role !== 'owner' && $user->role !== 'admin') {
+        if (!in_array($user->role, ['owner', 'admin'])) {
             return response()->json(['message' => 'Acesso negado.'], 403);
         }
 
@@ -42,7 +40,7 @@ class TenantController extends Controller
 
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('tenants/logos', 'public');
-            $logoUrl = Storage::url($path);
+            $logoUrl = $path;
         }
 
         $tenant = Tenant::create([
@@ -65,13 +63,9 @@ class TenantController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-
         $tenant = Tenant::with('owner')->find($id);
 
-        if (!$tenant) {
-            return response()->json(['message' => 'Tenant não encontrado.'], 404);
-        }
-
+        if (!$tenant) return response()->json(['message' => 'Tenant não encontrado.'], 404);
         if ($user->tenant_id !== $tenant->id && $user->role !== 'admin') {
             return response()->json(['message' => 'Acesso negado.'], 403);
         }
@@ -84,10 +78,7 @@ class TenantController extends Controller
         $user = Auth::user();
         $tenant = Tenant::find($id);
 
-        if (!$tenant) {
-            return response()->json(['message' => 'Tenant não encontrado.'], 404);
-        }
-
+        if (!$tenant) return response()->json(['message' => 'Tenant não encontrado.'], 404);
         if ($user->tenant_id !== $tenant->id && $user->role !== 'admin') {
             return response()->json(['message' => 'Acesso negado.'], 403);
         }
@@ -108,16 +99,15 @@ class TenantController extends Controller
 
         if ($request->hasFile('logo')) {
             if ($tenant->logo_url) {
-                $oldPath = str_replace('/storage/', '', $tenant->logo_url);
-                Storage::disk('public')->delete($oldPath);
+                Storage::disk('public')->delete($tenant->logo_url);
             }
             $path = $request->file('logo')->store('tenants/logos', 'public');
-            $tenant->logo_url = Storage::url($path);
+            $tenant->logo_url = $path;
         }
 
-        $tenant->update($request->only([
+        $tenant->fill($request->only([
             'name', 'cnpj', 'im', 'primary_color', 'secondary_color', 'settings'
-        ]));
+        ]))->save();
 
         return response()->json([
             'message' => 'Tenant atualizado com sucesso.',
@@ -130,12 +120,14 @@ class TenantController extends Controller
         $user = Auth::user();
         $tenant = Tenant::find($id);
 
-        if (!$tenant) {
-            return response()->json(['message' => 'Tenant não encontrado.'], 404);
+        if (!$tenant) return response()->json(['message' => 'Tenant não encontrado.'], 404);
+        if (!in_array($user->role, ['owner', 'admin'])) {
+            return response()->json(['message' => 'Acesso negado.'], 403);
         }
 
-        if ($user->role !== 'owner' && $user->role !== 'admin') {
-            return response()->json(['message' => 'Acesso negado.'], 403);
+        // 🔧 Remove logo
+        if ($tenant->logo_url) {
+            Storage::disk('public')->delete($tenant->logo_url);
         }
 
         $tenant->delete();

@@ -15,6 +15,10 @@ return new class extends Migration
             $table->string('specialty', 120)->nullable();
             $table->text('bio')->nullable();
             $table->string('photo_url', 255)->nullable();
+            $table->boolean('show_prices')->default(true);
+            $table->time('default_start_hour')->nullable();       // início padrão
+            $table->time('default_end_hour')->nullable();         // fim padrão
+            $table->integer('default_consultation_time')->default(30); // minutos
             $table->boolean('active')->default(true);
             $table->timestamps();
 
