@@ -21,9 +21,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // ==================================================
-        // 🏢 TENANT PADRÃO
-        // ==================================================
+        // Tenant padrão
         $tenant = Tenant::firstOrCreate(
             ['id' => 1],
             [
@@ -34,9 +32,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // ==================================================
-        // 👑 ADMIN PADRÃO
-        // ==================================================
+        // Usuário administrador
         $admin = User::firstOrCreate(
             ['email' => 'admin@admin.com'],
             [
@@ -48,9 +44,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // ==================================================
-        // 🧑‍⚕️ PROFISSIONAIS
-        // ==================================================
+        // Usuários profissionais
         $prof1 = User::firstOrCreate(
             ['email' => 'dra.juliana@clinica.com'],
             [
@@ -73,6 +67,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // Perfis profissionais
         $professional1 = Professional::firstOrCreate([
             'tenant_id' => $tenant->id,
             'user_id' => $prof1->id,
@@ -89,9 +84,7 @@ class DatabaseSeeder extends Seeder
             'active' => true,
         ]);
 
-        // ==================================================
-        // 💆‍♀️ SERVIÇOS
-        // ==================================================
+        // Serviços
         $service1 = Service::firstOrCreate([
             'tenant_id' => $tenant->id,
             'professional_id' => $professional1->id,
@@ -112,12 +105,14 @@ class DatabaseSeeder extends Seeder
             'active' => true,
         ]);
 
-        // ==================================================
-        // 🕒 AGENDA PADRÃO DOS PROFISSIONAIS
-        // ==================================================
+        // Agendas padrão
         foreach (range(1, 5) as $day) {
             ProfessionalSchedule::updateOrCreate(
-                ['professional_id' => $professional1->id, 'day_of_week' => $day],
+                [
+                    'tenant_id' => $tenant->id,
+                    'professional_id' => $professional1->id,
+                    'day_of_week' => $day,
+                ],
                 [
                     'available' => true,
                     'start_hour' => '09:00',
@@ -129,7 +124,11 @@ class DatabaseSeeder extends Seeder
             );
 
             ProfessionalSchedule::updateOrCreate(
-                ['professional_id' => $professional2->id, 'day_of_week' => $day],
+                [
+                    'tenant_id' => $tenant->id,
+                    'professional_id' => $professional2->id,
+                    'day_of_week' => $day,
+                ],
                 [
                     'available' => true,
                     'start_hour' => '08:00',
@@ -141,16 +140,16 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // 🔒 Bloqueia uma data específica
+        // Datas bloqueadas
         BlockedDate::updateOrCreate([
+            'tenant_id' => $tenant->id,
             'professional_id' => $professional1->id,
             'date' => '2025-11-12',
-            'reason' => 'Congresso Médico'
+        ], [
+            'reason' => 'Congresso Médico',
         ]);
 
-        // ==================================================
-        // 👩‍💼 CLIENTES
-        // ==================================================
+        // Clientes
         $clients = collect([
             ['name' => 'Maria Silva',  'email' => 'maria@cliente.com',  'phone' => '11999998888'],
             ['name' => 'João Souza',   'email' => 'joao@cliente.com',   'phone' => '11988887777'],
@@ -161,9 +160,7 @@ class DatabaseSeeder extends Seeder
             'consent_marketing' => true,
         ])));
 
-        // ==================================================
-        // 📅 AGENDAMENTOS
-        // ==================================================
+        // Agendamentos
         $now = Carbon::now();
 
         $appointments = [
@@ -202,7 +199,6 @@ class DatabaseSeeder extends Seeder
                 'source' => 'web',
             ]));
 
-            // Log automático
             AppointmentLog::create([
                 'appointment_id' => $appointment->id,
                 'from_status' => 'pending',
@@ -213,9 +209,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // ==================================================
-        // ✅ SAÍDA FINAL
-        // ==================================================
+        // Mensagens de saída
         $this->command->info('Seeder executado com sucesso!');
         $this->command->info('Tenant padrão: Clínica Principal');
         $this->command->info('Admin: admin@admin.com | senha: 123123');

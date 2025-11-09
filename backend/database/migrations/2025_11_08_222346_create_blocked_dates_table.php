@@ -10,17 +10,25 @@ return new class extends Migration
     {
         Schema::create('blocked_dates', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('tenant_id');
             $table->unsignedBigInteger('professional_id');
             $table->date('date');
             $table->string('reason')->nullable();
             $table->timestamps();
+
+            // Relacionamentos
+            $table->foreign('tenant_id')
+                ->references('id')
+                ->on('tenants')
+                ->cascadeOnDelete();
 
             $table->foreign('professional_id')
                 ->references('id')
                 ->on('professionals')
                 ->cascadeOnDelete();
 
-            $table->unique(['professional_id', 'date']);
+            // Restrições únicas
+            $table->unique(['tenant_id', 'professional_id', 'date']);
         });
     }
 

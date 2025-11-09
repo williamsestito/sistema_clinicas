@@ -18,35 +18,39 @@ class Appointment extends Model
         'end_at',
         'status',
         'source',
-        'notes'
+        'notes',
     ];
 
     protected $casts = [
         'start_at' => 'datetime',
-        'end_at' => 'datetime'
+        'end_at' => 'datetime',
     ];
 
-    // 🔗 Relacionamentos
+    // Relacionamento com tenant
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);
     }
 
+    // Relacionamento com cliente (tabela users)
     public function client()
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(User::class, 'client_id');
     }
 
+    // Relacionamento com profissional
     public function professional()
     {
-        return $this->belongsTo(Professional::class);
+        return $this->belongsTo(Professional::class, 'professional_id');
     }
 
+    // Relacionamento com serviço
     public function service()
     {
-        return $this->belongsTo(Service::class);
+        return $this->belongsTo(Service::class, 'service_id');
     }
 
+    // Relacionamento com logs do agendamento
     public function logs()
     {
         return $this->hasMany(AppointmentLog::class);

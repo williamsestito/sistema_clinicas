@@ -38,52 +38,36 @@ class User extends Authenticatable
         'active',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
-        'active' => 'boolean',
-        'social_name' => 'boolean',
-        'birth_date' => 'date',
+        'active'            => 'boolean',
+        'social_name'       => 'boolean',
+        'birth_date'        => 'date',
         'email_verified_at' => 'datetime',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | 🔗 RELACIONAMENTOS
-    |--------------------------------------------------------------------------
-    */
-    public function tenant()     { return $this->belongsTo(Tenant::class); }
-    public function professional(){ return $this->hasOne(Professional::class); }
-    public function client()     { return $this->hasOne(Client::class); }
+    // -------------------------------------------------------------------------
+    // Relacionamentos
+    // -------------------------------------------------------------------------
+    public function tenant()       { return $this->belongsTo(Tenant::class); }
+    public function professional() { return $this->hasOne(Professional::class); }
+    public function client()       { return $this->hasOne(Client::class); }
 
+    // Sempre referencia agendamentos em que o usuário é o cliente (paciente)
     public function appointments()
     {
-        // Se for cliente, retorna os agendamentos como paciente
-        if ($this->isClient()) {
-            return $this->hasMany(Appointment::class, 'client_id');
-        }
-
-        // Se for profissional, retorna os agendamentos que ele atende
-        if ($this->isProfessional()) {
-            return $this->hasMany(Appointment::class, 'professional_id');
-        }
-
-        return $this->hasMany(Appointment::class);
+        return $this->hasMany(Appointment::class, 'client_id', 'id');
     }
 
     public function appointmentLogs()
     {
-        return $this->hasMany(AppointmentLog::class, 'changed_by_user_id');
+        return $this->hasMany(AppointmentLog::class, 'changed_by_user_id', 'id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 🔐 PASSWORD HASH AUTOMÁTICO
-    |--------------------------------------------------------------------------
-    */
+    // -------------------------------------------------------------------------
+    // Hash automático de senha
+    // -------------------------------------------------------------------------
     protected function password(): Attribute
     {
         return Attribute::make(
@@ -93,11 +77,9 @@ class User extends Authenticatable
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 🎨 ACESSORS DE EXIBIÇÃO
-    |--------------------------------------------------------------------------
-    */
+    // -------------------------------------------------------------------------
+    // Acessores
+    // -------------------------------------------------------------------------
     public function getDisplayNameAttribute(): string
     {
         return ucwords($this->name);
@@ -106,36 +88,29 @@ class User extends Authenticatable
     public function getPhoneFormattedAttribute(): ?string
     {
         $num = preg_replace('/\D/', '', $this->phone ?? '');
-        if (strlen($num) === 11) {
-            return sprintf('(%s) %s-%s', substr($num, 0, 2), substr($num, 2, 5), substr($num, 7));
-        }
-        return $this->phone;
+        return strlen($num) === 11
+            ? sprintf('(%s) %s-%s', substr($num, 0, 2), substr($num, 2, 5), substr($num, 7))
+            : $this->phone;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 🔎 SCOPES
-    |--------------------------------------------------------------------------
-    */
-    public function scopeActive($query)    { return $query->where('active', true); }
+    // -------------------------------------------------------------------------
+    // Scopes
+    // -------------------------------------------------------------------------
+    public function scopeActive($query) { return $query->where('active', true); }
     public function scopeOfTenant($query, int $tenantId) { return $query->where('tenant_id', $tenantId); }
-    public function scopeWithRole($query, string $role)  { return $query->where('role', $role); }
+    public function scopeWithRole($query, string $role) { return $query->where('role', $role); }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 🧠 FUNÇÕES DE PAPEL
-    |--------------------------------------------------------------------------
-    */
+    // -------------------------------------------------------------------------
+    // Papéis
+    // -------------------------------------------------------------------------
     public function isAdmin(): bool        { return in_array($this->role, ['admin', 'owner']); }
     public function isProfessional(): bool { return $this->role === 'professional'; }
     public function isFrontdesk(): bool    { return $this->role === 'frontdesk'; }
     public function isClient(): bool       { return $this->role === 'client'; }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 🔑 TOKEN API
-    |--------------------------------------------------------------------------
-    */
+    // -------------------------------------------------------------------------
+    // Tokens API
+    // -------------------------------------------------------------------------
     public function generateToken(string $device = 'web'): string
     {
         $this->tokens()->delete();
@@ -147,11 +122,9 @@ class User extends Authenticatable
         $this->tokens()->delete();
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 🏷️ RÓTULOS E REPRESENTAÇÃO
-    |--------------------------------------------------------------------------
-    */
+    // -------------------------------------------------------------------------
+    // Representação e rótulos
+    // -------------------------------------------------------------------------
     public function getRoleLabelAttribute(): string
     {
         return match ($this->role) {

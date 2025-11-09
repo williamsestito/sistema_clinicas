@@ -20,7 +20,11 @@ use App\Http\Controllers\{
     ProfessionalReportController
 };
 
-// Rotas públicas (login, registro, recuperação de senha)
+/*
+|--------------------------------------------------------------------------
+| Rotas Públicas
+|--------------------------------------------------------------------------
+*/
 Route::get('/', fn() => redirect()->route('login'));
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
@@ -31,14 +35,22 @@ Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 
-// Rotas autenticadas
+/*
+|--------------------------------------------------------------------------
+| Rotas Autenticadas
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard e Agenda (Admin)
-    Route::get('/admin/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
-    Route::get('/admin/agenda', fn() => view('admin.agenda'))->name('agenda');
+    // Dashboard e agenda do admin
+    Route::view('/admin/dashboard', 'admin.dashboard')->name('dashboard');
+    Route::view('/admin/agenda', 'admin.agenda')->name('agenda');
 
-    // Colaboradores
+    /*
+    |--------------------------------------------------------------------------
+    | Colaboradores (Admin)
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('employees')->group(function () {
         Route::get('/', [UserController::class, 'listView'])->name('employees.index');
         Route::get('/create', [UserController::class, 'create'])->name('employees.create');
@@ -48,7 +60,11 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('employees.destroy');
     });
 
-    // Pacientes
+    /*
+    |--------------------------------------------------------------------------
+    | Pacientes (Admin)
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('pacients')->group(function () {
         Route::get('/', [PacientController::class, 'index'])->name('pacients.index');
         Route::get('/create', [PacientController::class, 'create'])->name('pacients.create');
@@ -59,22 +75,24 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [PacientController::class, 'show'])->name('pacients.show');
     });
 
-    // Área do profissional
+    /*
+    |--------------------------------------------------------------------------
+    | Área do Profissional
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('professional')->name('professional.')->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [ProfessionalDashboardController::class, 'index'])->name('dashboard');
 
-        // Pacientes
+        // Pacientes do profissional
         Route::get('/pacients', [ProfessionalPacientController::class, 'index'])->name('pacients');
         Route::get('/pacients/{id}', [ProfessionalPacientController::class, 'show'])->name('pacients.show');
 
-        // Agenda
+        // Agenda e configuração
         Route::get('/schedule', [ProfessionalScheduleController::class, 'index'])->name('schedule');
         Route::post('/schedule/store', [ProfessionalScheduleController::class, 'store'])->name('schedule.store');
         Route::post('/schedule/update', [ProfessionalScheduleController::class, 'update'])->name('schedule.update');
-
-        // Configuração da agenda
         Route::get('/schedule/config', [ProfessionalScheduleConfigController::class, 'index'])->name('schedule.config');
         Route::post('/schedule/config/update', [ProfessionalScheduleConfigController::class, 'update'])->name('schedule.config.update');
 
@@ -97,11 +115,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/profile/update', [ProfessionalProfileController::class, 'update'])->name('profile.update');
     });
 
-    // Área do paciente logado
+    /*
+    |--------------------------------------------------------------------------
+    | Área do Paciente
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('pacient')->name('pacient.')->group(function () {
-        Route::get('/appointments', fn() => view('pacient.appointments'))->name('appointments');
-        Route::get('/schedule', fn() => view('pacient.schedule'))->name('schedule');
-        Route::get('/profile', fn() => view('pacient.profile'))->name('profile');
+        Route::view('/appointments', 'pacient.appointments')->name('appointments');
+        Route::view('/schedule', 'pacient.schedule')->name('schedule');
+        Route::view('/profile', 'pacient.profile')->name('profile');
     });
 
     // Logout
