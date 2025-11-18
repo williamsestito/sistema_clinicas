@@ -2,79 +2,225 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Schedule;
+use App\Models\SchedulePeriod;
+use App\Models\BlockedDate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\ProfessionalSchedule;
 
 class ProfessionalScheduleConfigController extends Controller
 {
     /**
-     * Exibe a tela de configuração da agenda do profissional.
+     * Tela principal de configuração da agenda
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $tenantId = $user->tenant_id;
+        $professionalId = $user->professional->id;
 
-        $diasSemana = [
-            1 => 'Segunda-feira',
-            2 => 'Terça-feira',
-            3 => 'Quarta-feira',
-            4 => 'Quinta-feira',
-            5 => 'Sexta-feira',
+        $days = [
+            0 => 'Domingo',
+            1 => 'Segunda',
+            2 => 'Terça',
+            3 => 'Quarta',
+            4 => 'Quinta',
+            5 => 'Sexta',
             6 => 'Sábado',
-            7 => 'Domingo',
         ];
 
-        $schedules = ProfessionalSchedule::where('professional_id', $user->id)
-            ->where('tenant_id', $tenantId)
+        $periods = SchedulePeriod::where('tenant_id', $tenantId)
+            ->where('professional_id', $professionalId)
+            ->orderBy('start_date', 'desc')
             ->get();
 
-        return view('professional.schedule_config', compact('diasSemana', 'schedules'));
+        $selectedPeriod = null;
+
+        if ($request->has('period_id')) {
+            $selectedPeriod = SchedulePeriod::where('tenant_id', $tenantId)
+                ->where('professional_id', $professionalId)
+                ->find($request->period_id);
+        }
+
+        if (!$selectedPeriod) {
+            $selectedPeriod = $periods->first();
+        }
+
+        $weeklySchedules = collect();
+
+        if ($selectedPeriod) {
+            $weeklySchedules = Schedule::where('tenant_id', $tenantId)
+                ->where('professional_id', $professionalId)
+                ->where('period_id', $selectedPeriod->id)
+                ->orderBy('weekday')
+                ->get()
+                ->keyBy('weekday');
+        }
+
+        $blocked = BlockedDate::where('tenant_id', $tenantId)
+            ->where('professional_id', $professionalId)
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return view('professional.schedule_config', [
+            'days'            => $days,
+            'periods'         => $periods,
+            'selectedPeriod'  => $selectedPeriod,
+            'weeklySchedules' => $weeklySchedules,
+            'blocked'         => $blocked,
+        ]);
     }
 
+
     /**
-     * Atualiza as configurações de agenda do profissional.
+     * Criar período
      */
-    public function update(Request $request)
+    public function storePeriod(Request $request)
     {
         $user = Auth::user();
-        $tenantId = $user->tenant_id;
+        $professionalId = $user->professional->id;
 
-        $dados = $request->input('schedules', []);
+        $validated = $request->validate([
+            'start_date'   => 'required|date',
+            'end_date'     => 'required|date|after_or_equal:start_date',
+            'active_days'  => 'required|array|min:1',
+            'active_days.*'=> 'integer|min:0|max:6',
+        ]);
 
-        \Log::info('Schedules recebidos:', $dados);
+        SchedulePeriod::create([
+            'tenant_id'       => $user->tenant_id,
+            'professional_id' => $professionalId,
+            'start_date'      => $validated['start_date'],
+            'end_date'        => $validated['end_date'],
+            'active_days'     => $validated['active_days'],
+        ]);
 
-        foreach ($dados as $weekday => $config) {
-            // Ignora linhas vazias
-            if (
-                empty($config['active']) &&
-                empty($config['start_time']) &&
-                empty($config['end_time'])
-            ) {
+        return back()->with('success', 'Período criado com sucesso!');
+    }
+
+
+    /**
+     * Excluir período
+     */
+    public function destroyPeriod($id)
+    {
+        $user = Auth::user();
+
+        $period = SchedulePeriod::where('tenant_id', $user->tenant_id)
+            ->where('professional_id', $user->professional->id)
+            ->findOrFail($id);
+
+        $period->delete();
+
+        return back()->with('success', 'Período removido com sucesso!');
+    }
+
+
+
+    /**
+     * Criar ou atualizar horários semanais
+     */
+    public function storeWeekly(Request $request)
+    {
+        $user = Auth::user();
+
+        $selectedPeriod = SchedulePeriod::where('tenant_id', $user->tenant_id)
+            ->where('professional_id', $user->professional->id)
+            ->where('id', $request->period_id)
+            ->first();
+
+        if (!$selectedPeriod) {
+            return back()->withErrors('Nenhum período válido foi selecionado.');
+        }
+
+        $activeDays = array_map('intval', $selectedPeriod->active_days);
+        $schedules = $request->get('schedules', []);
+
+        foreach ($schedules as $weekday => $data) {
+
+            if (!in_array($weekday, $activeDays)) {
                 continue;
             }
 
-            $schedule = ProfessionalSchedule::firstOrNew([
-                'professional_id' => $user->id,
-                'tenant_id'       => $tenantId,
-                'day_of_week'     => $weekday,
-            ]);
-
-            // 🔹 Garantir tenant_id mesmo em novas criações
-            $schedule->tenant_id    = $tenantId;
-            $schedule->available    = isset($config['active']);
-            $schedule->start_hour   = $config['start_time'] ?? null;
-            $schedule->end_hour     = $config['end_time'] ?? null;
-            $schedule->break_start  = $config['break_start'] ?? null;
-            $schedule->break_end    = $config['break_end'] ?? null;
-            $schedule->duration_min = $config['duration_min'] ?? 30;
-
-            $schedule->save();
+            Schedule::updateOrCreate(
+                [
+                    'tenant_id'       => $user->tenant_id,
+                    'professional_id' => $user->professional->id,
+                    'period_id'       => $selectedPeriod->id,
+                    'weekday'         => $weekday
+                ],
+                [
+                    'start_time'    => $data['start_time'] ?? null,
+                    'end_time'      => $data['end_time'] ?? null,
+                    'break_start'   => $data['break_start'] ?? null,
+                    'break_end'     => $data['break_end'] ?? null,
+                    'slot_min'      => $data['slot_min'] ?? 30,
+                ]
+            );
         }
 
-        return redirect()
-            ->route('professional.schedule.config')
-            ->with('success', '✅ Configuração de agenda salva com sucesso!');
+        return back()->with('success', 'Horários salvos com sucesso!');
     }
+
+
+
+    /**
+     * Criar bloqueio de data — AGORA AJAX
+     */
+    public function storeBlock(Request $request)
+        {
+            $user = Auth::user();
+            $professionalId = $user->professional->id;
+
+            $validated = $request->validate([
+                'date'   => 'required|date',
+                'reason' => 'nullable|string|max:255',
+            ]);
+
+            $exists = BlockedDate::where('tenant_id', $user->tenant_id)
+                ->where('professional_id', $professionalId)
+                ->where('date', $validated['date'])
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este dia já está bloqueado.'
+                ]);
+            }
+
+            $item = BlockedDate::create([
+                'tenant_id'       => $user->tenant_id,
+                'professional_id' => $professionalId,
+                'date'            => $validated['date'],
+                'reason'          => $validated['reason'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dia bloqueado com sucesso!',
+                'item'    => $item
+            ]);
+        }
+
+
+
+    public function destroyBlock($id)
+    {
+        $user = Auth::user();
+
+        $blocked = BlockedDate::where('tenant_id', $user->tenant_id)
+            ->where('professional_id', $user->professional->id)
+            ->findOrFail($id);
+
+        $blocked->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bloqueio removido com sucesso!',
+            'id'      => $id,
+        ]);
+    }
+
+
 }

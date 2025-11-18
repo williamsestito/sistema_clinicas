@@ -8,16 +8,29 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('blocked_dates', function (Blueprint $table) {
+        Schema::create('schedule_period_days', function (Blueprint $table) {
             $table->id();
 
             $table->unsignedBigInteger('tenant_id');
             $table->unsignedBigInteger('professional_id');
 
-            $table->date('date');
-            $table->string('reason')->nullable();
+            // Dia da semana (0=Dom, 6=Sáb)
+            $table->unsignedTinyInteger('weekday');
+
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+
+            $table->time('break_start')->nullable();
+            $table->time('break_end')->nullable();
+
+            $table->unsignedSmallInteger('duration')->default(30);
+
+            $table->boolean('available')->default(true);
 
             $table->timestamps();
+
+            // Evita duplicidade por profissional
+            $table->unique(['tenant_id', 'professional_id', 'weekday']);
 
             // FKs
             $table->foreign('tenant_id')
@@ -29,14 +42,11 @@ return new class extends Migration
                 ->references('id')
                 ->on('professionals')
                 ->cascadeOnDelete();
-
-            // 1 bloqueio por profissional por dia
-            $table->unique(['tenant_id', 'professional_id', 'date']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('blocked_dates');
+        Schema::dropIfExists('schedule_period_days');
     }
 };

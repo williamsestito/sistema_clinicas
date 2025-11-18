@@ -1,11 +1,17 @@
-@props(['icon', 'label', 'value' => 0, 'color' => 'bg-gray-100 text-gray-800'])
+@props([
+    'icon' => 'fa-info',
+    'bg' => 'bg-gray-50',
+    'text' => 'text-gray-700',
+    'label' => '',
+    'value' => 0
+])
 
-<div class="p-4 rounded-lg shadow-sm {{ $color }}">
-  <div class="flex items-center space-x-3">
-    <i class="fa {{ $icon }} text-lg"></i>
-    <div>
-      <p class="text-xs uppercase tracking-wide font-semibold">{{ $label }}</p>
-      <p class="text-xl font-bold">{{ $value }}</p>
+<div class="p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-3 {{ $bg }}">
+    <div class="text-xl {{ $text }}">
+        <i class="fa {{ $icon }}"></i>
     </div>
-  </div>
+    <div>
+        <p class="text-xs text-gray-600">{{ $label }}</p>
+        <p class="text-lg font-semibold {{ $text }}">{{ $value }}</p>
+    </div>
 </div>

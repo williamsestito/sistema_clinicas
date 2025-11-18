@@ -43,7 +43,7 @@ class Professional extends Model
         return $this->hasMany(ProfessionalSchedule::class);
     }
 
-    public function blockedDates()
+    public function blocked()
     {
         return $this->hasMany(BlockedDate::class);
     }
