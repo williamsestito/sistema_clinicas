@@ -131,4 +131,56 @@ document.addEventListener('click', async function(e) {
         showConfirmButton: false
     });
 });
+
+
+/* ============================================================
+   EXCLUIR PERÍODO — SWEETALERT + AJAX
+   (NOVO BLOCO — sem alterar nada do que já funcionava)
+   ============================================================ */
+document.addEventListener('click', async function(e) {
+    if (!e.target.classList.contains('delete-period')) return;
+
+    e.preventDefault();
+
+    const id = e.target.dataset.id;
+
+    const confirm = await Swal.fire({
+        title: "Excluir Período?",
+        text: "Deseja realmente remover este período?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sim, excluir",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6"
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    const response = await fetch(`/professional/schedule/period/${id}`, {
+        method: "DELETE",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRF-TOKEN": document.querySelector('input[name=_token]').value
+        }
+    });
+
+    const json = await response.json();
+
+    if (!json.success) return;
+
+    const row = document.getElementById(`period-row-${id}`);
+    row.classList.add("bg-red-100");
+
+    setTimeout(() => row.remove(), 250);
+
+    Swal.fire({
+        icon: "success",
+        title: "Período removido",
+        text: json.message,
+        timer: 1500,
+        showConfirmButton: false
+    });
+
+});
 </script>

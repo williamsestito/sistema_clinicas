@@ -26,8 +26,14 @@
         </div>
 
         <div>
-            <button type="submit" class="btn-primary w-full py-2">
-                Aplicar
+            <button 
+                type="submit"
+                class="w-full py-2 text-sm font-semibold 
+                       text-white bg-green-600 
+                       hover:bg-green-700 
+                       rounded-md shadow 
+                       transition-all duration-200">
+                ✔️ Aplicar
             </button>
         </div>
 

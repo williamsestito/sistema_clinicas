@@ -30,7 +30,14 @@
         </div>
 
         <div class="text-right">
-            <button class="btn-success px-5 py-2">Salvar Período</button>
+            <button 
+                class="px-5 py-2 text-sm font-semibold 
+                       text-white bg-green-600 
+                       hover:bg-green-700 
+                       rounded-md shadow 
+                       transition-all duration-200">
+                ✔️ Salvar Período
+            </button>
         </div>
     </form>
 </div>

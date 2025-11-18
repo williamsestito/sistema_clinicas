@@ -95,16 +95,13 @@ class SchedulePeriodController extends Controller
      */
     public function destroy($id)
     {
-        $user = Auth::user();
-
-        $period = SchedulePeriod::where('tenant_id', $user->tenant_id)
-            ->where('professional_id', $user->professional->id)
-            ->findOrFail($id);
-
+        $period = SchedulePeriod::findOrFail($id);
         $period->delete();
 
-        return redirect()
-            ->route('professional.schedule.config')
-            ->with('success', 'Período removido com sucesso!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Período removido com sucesso!'
+        ]);
     }
+
 }

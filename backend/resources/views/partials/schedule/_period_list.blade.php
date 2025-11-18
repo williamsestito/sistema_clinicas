@@ -14,17 +14,17 @@
         ];
     @endphp
 
-    <ul class="divide-y divide-gray-200 text-sm">
+    <ul class="divide-y divide-gray-200 text-sm" id="period-list">
         @foreach($periods as $period)
-            <li class="py-3 flex justify-between items-center">
-                <div class="text-gray-800 font-medium">
+            <li id="period-row-{{ $period->id }}" class="py-3 flex justify-between items-center">
 
+                <div class="text-gray-800 font-medium">
                     <strong>{{ \Carbon\Carbon::parse($period->start_date)->format('d/m/Y') }}</strong>
                     →
                     <strong>{{ \Carbon\Carbon::parse($period->end_date)->format('d/m/Y') }}</strong>
 
                     <span class="text-gray-500 ml-2">
-                        Dias: 
+                        Dias:
                         {{ implode(', ', array_map(fn($d) => $weekMap[$d], $period->active_days)) }}
                     </span>
 
@@ -35,13 +35,16 @@
                     @endif
                 </div>
 
-                <form action="{{ route('professional.schedule.period.destroy', $period->id) }}"
-                      method="POST"
-                      onsubmit="return confirm('Excluir este período?')">
-                    @csrf
-                    @method('DELETE')
-                    <button class="text-red-600 hover:text-red-800 text-sm">Excluir</button>
-                </form>
+                {{-- BOTÃO EXCLUIR PADRÃO --}}
+                <button 
+                    class="delete-period px-3 py-1 text-sm font-medium 
+                           text-red-600 hover:text-white 
+                           hover:bg-red-600 border border-red-600 
+                           rounded-md transition-all duration-200"
+                    data-id="{{ $period->id }}">
+                    Excluir
+                </button>
+
             </li>
         @endforeach
     </ul>
