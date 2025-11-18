@@ -10,6 +10,7 @@ class BlockedDate extends Model
     use HasFactory;
 
     protected $fillable = [
+        'tenant_id',
         'professional_id',
         'date',
         'reason'

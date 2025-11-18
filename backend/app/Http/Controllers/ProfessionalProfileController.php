@@ -15,7 +15,7 @@ class ProfessionalProfileController extends Controller
 
         if (!$professional) {
             $professional = Professional::create([
-                'tenant_id' => $user->tenant_id,
+                'tenant_id' => $professional->tenant_id,
                 'user_id' => $user->id,
                 'active' => true,
             ]);

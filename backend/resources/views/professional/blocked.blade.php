@@ -48,7 +48,7 @@
   <div class="bg-white shadow rounded-lg p-5">
     <h2 class="font-semibold text-gray-700 mb-3">Dias já bloqueados</h2>
 
-    @if($blockedDates->isEmpty())
+    @if($blocked->isEmpty())
       <p class="text-gray-500 text-sm">Nenhum bloqueio cadastrado até o momento.</p>
     @else
       <table class="min-w-full divide-y divide-gray-200">
@@ -60,7 +60,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          @foreach($blockedDates as $blocked)
+          @foreach($blocked as $blocked)
           <tr>
             <td class="px-3 py-2 text-sm text-gray-800">
               {{ \Carbon\Carbon::parse($blocked->date)->format('d/m/Y') }}
