@@ -23,25 +23,6 @@ class SchedulePeriod extends Model
         'end_date'    => 'date',
     ];
 
-    /**
-     * Garante que active_days sempre será um array numérico
-     */
-    public function getActiveDaysAttribute($value)
-    {
-        if (!$value) {
-            return [];
-        }
-
-        return collect(json_decode($value, true))
-            ->map(fn ($d) => (int) $d)
-            ->values()
-            ->toArray();
-    }
-
-    /**
-     * Relacionamento CORRETO:
-     * Um período possui vários dias configurados (SchedulePeriodDay)
-     */
     public function days(): HasMany
     {
         return $this->hasMany(SchedulePeriodDay::class, 'period_id');

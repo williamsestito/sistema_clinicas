@@ -29,7 +29,7 @@
                 ← Ontem
             </a>
 
-            <a href="{{ route('professional.schedule', ['date' => now()->toDateString()]) }}"
+            <a href="{{ route('professional.schedule', ['date' => now()->format('Y-m-d')]) }}"
                class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm transition btn-soft">
                 Hoje
             </a>
@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    {{-- Data --}}
+    {{-- Data formatada --}}
     <p class="text-gray-500 mb-4 flex items-center gap-2">
         <i class="fa-regular fa-calendar"></i>
         {{ $date->translatedFormat('l, d \\d\\e F \\d\\e Y') }}
@@ -60,7 +60,7 @@
         </button>
     </div>
 
-    {{-- Erros --}}
+    {{-- Mensagem de erro --}}
     @isset($error)
         <div class="p-4 bg-red-100 text-red-700 border border-red-200 rounded mb-6">
             <strong>Atenção:</strong> {{ $error }}
@@ -70,21 +70,20 @@
     {{-- Grade de horários --}}
     @if(isset($slots) && $slots->count())
         <div class="bg-white p-5 rounded-lg shadow-soft mb-10 card-clean">
+
             <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                 <i class="fa-regular fa-clock text-blue-500"></i>
                 Horários do dia
             </h3>
 
             <div class="grid slot-grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-
                 @foreach($slots as $slot)
                     @php
                         $color = match($slot['type']) {
                             'available' => 'slot-available',
                             'occupied'  => 'slot-occupied',
-                            'lunch'     => 'slot-lunch',
                             'blocked'   => 'slot-blocked',
-                            default     => 'bg-white border border-gray-300 text-gray-700'
+                            default     => 'slot-lunch'
                         };
                     @endphp
 
@@ -92,11 +91,11 @@
                         {{ $slot['start'] }} - {{ $slot['end'] }}
                     </div>
                 @endforeach
-
             </div>
 
             {{-- Legenda --}}
             <div class="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-600">
+
                 <div class="flex items-center gap-2">
                     <span class="w-4 h-4 bg-green-50 border border-green-400 rounded"></span>
                     Disponível
@@ -108,7 +107,7 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <span class="w-4 h-4 bg-gray-100 border-gray-400 border rounded"></span>
+                    <span class="w-4 h-4 bg-gray-100 border border-gray-400 rounded"></span>
                     Intervalo
                 </div>
 
@@ -117,22 +116,23 @@
                     Bloqueado
                 </div>
             </div>
+
         </div>
     @endif
 
-
     {{-- Lista de Agendamentos --}}
     <div class="mt-10">
+
         <h3 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
             <i class="fa-solid fa-user-clock text-blue-500"></i> Agendamentos do dia
         </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
             @forelse($appointments as $appt)
-                <div class="p-4 bg-white rounded-lg shadow-soft hover-soft border border-gray-100 transition">
 
+                <div class="p-4 bg-white rounded-lg shadow-soft hover-soft border border-gray-100 transition">
                     <div class="flex justify-between items-center mb-2">
+
                         <h2 class="font-semibold text-gray-800 text-sm">
                             {{ $appt->client->name ?? 'Paciente não identificado' }}
                         </h2>
@@ -164,28 +164,32 @@
                             “{{ $appt->notes }}”
                         </p>
                     @endif
-
                 </div>
 
             @empty
+
                 <div class="col-span-full text-center text-gray-500 p-6 bg-white rounded-md shadow-soft">
                     Nenhum agendamento encontrado para esta data.
                 </div>
+
             @endforelse
         </div>
     </div>
 
-
-    {{-- Dias Bloqueados --}}
+    {{-- Dias bloqueados --}}
     <div class="mt-10">
+
         <h3 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
             <i class="fa-solid fa-ban text-red-500"></i> Dias Bloqueados
         </h3>
 
         @if($blocked->count())
+
             <ul class="space-y-1 text-sm text-gray-700">
+
                 @foreach($blocked as $b)
                     <li class="flex justify-between items-center bg-red-50 px-3 py-2 rounded-md border border-red-100">
+
                         <div>
                             🗓️ {{ $b->date->format('d/m/Y') }}
                             <span class="text-gray-500">— {{ $b->reason ?? 'Bloqueio manual' }}</span>
@@ -196,18 +200,24 @@
                               onsubmit="return confirm('Desbloquear este dia?')">
                             @csrf
                             @method('DELETE')
+
                             <button class="text-xs text-red-600 hover:underline">Remover</button>
                         </form>
+
                     </li>
                 @endforeach
+
             </ul>
+
         @else
+
             <p class="text-sm text-gray-500 italic">
                 Nenhum bloqueio cadastrado neste período.
             </p>
-        @endif
-    </div>
 
+        @endif
+
+    </div>
 
     {{-- Modal Bloquear Dia --}}
     <div x-show="openBlockModal"
@@ -247,8 +257,8 @@
                     Confirmar Bloqueio
                 </button>
             </div>
-        </form>
 
+        </form>
     </div>
 
 </div>
