@@ -1,92 +1,122 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-/* ============================================================
+/* ============================================================================
+   CONFIGURAÇÕES GLOBAIS
+   ============================================================================ */
+
+// Token CSRF global vindo do <meta> em app.blade.php
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+
+// Função segura para formatar datas sem sofrer timezone
+function formatDateBR(dateString) {
+    return dateString.split("-").reverse().join("/");
+}
+
+
+/* ============================================================================
    INSERIR BLOQUEIO (AJAX)
-   ============================================================ */
-document.getElementById('block-date-form')?.addEventListener('submit', async function(e) {
+   ============================================================================ */
+document.getElementById('block-date-form')?.addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const form     = e.target;
+    const form = e.target;
+    const btn  = document.getElementById('block-submit-btn');
     const formData = new FormData(form);
 
-    const response = await fetch("{{ route('professional.schedule.blocked.store') }}", {
-        method: "POST",
-        headers: {
-            "X-Requested-With": "XMLHttpRequest",
-            "X-CSRF-TOKEN": form.querySelector('input[name=_token]').value
-        },
-        body: formData
-    });
+    if (btn) btn.disabled = true;
 
-    const json = await response.json();
-
-    if (!json.success) {
-        Swal.fire({
-            icon: "warning",
-            title: "Atenção",
-            text: json.message ?? "Erro ao bloquear data."
+    try {
+        const response = await fetch("{{ route('professional.schedule.blocked.store') }}", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRF-TOKEN": CSRF
+            },
+            body: formData
         });
-        return;
-    }
 
-    Swal.fire({
-        icon: "success",
-        title: "Sucesso!",
-        text: json.message,
-        timer: 1500,
-        showConfirmButton: false
-    });
+        const json = await response.json();
 
-    // ================================
-    // GARANTIR TABELA E TBODY EXISTEM
-    // ================================
-    let table = document.getElementById("blocked-table");
+        if (!json.success) {
+            Swal.fire({
+                icon: "warning",
+                title: "Atenção",
+                text: json.message ?? "Erro ao bloquear data."
+            });
+            if (btn) btn.disabled = false;
+            return;
+        }
 
-    if (!table) {
-        document.getElementById("blocked-list-container").innerHTML = `
-            <table id="blocked-table" class="min-w-full text-sm bg-white rounded shadow">
-                <thead>
-                    <tr class="border-b text-gray-600">
-                        <th class="py-2">Data</th>
-                        <th class="py-2">Motivo</th>
-                        <th class="py-2 text-right">Ações</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        `;
-        table = document.getElementById("blocked-table");
-    }
+        Swal.fire({
+            icon: "success",
+            title: "Sucesso!",
+            text: json.message,
+            timer: 1500,
+            showConfirmButton: false
+        });
 
-    const tbody = table.querySelector("tbody");
+        // Garante HTML da tabela se ela não existir
+        let table = document.getElementById("blocked-table");
 
-    // ================================
-    // INSERIR NOVA LINHA
-    // ================================
-    const reason = json.item.reason ? json.item.reason : "-";
+        if (!table) {
+            document.getElementById("blocked-list-container").innerHTML = `
+                <table id="blocked-table" class="min-w-full text-sm bg-white rounded shadow">
+                    <thead>
+                        <tr class="border-b text-gray-600 bg-gray-50">
+                            <th class="py-2 px-2 text-left">Data</th>
+                            <th class="py-2 px-2 text-left">Motivo</th>
+                            <th class="py-2 px-2 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            `;
+            table = document.getElementById("blocked-table");
+        }
 
-    tbody.insertAdjacentHTML("afterbegin", `
-        <tr id="block-row-${json.item.id}" class="border-b bg-green-50 transition">
-            <td class="py-2">${new Date(json.item.date).toLocaleDateString("pt-BR")}</td>
-            <td class="py-2">${reason}</td>
-            <td class="py-2 text-right">
-                <button class="delete-block text-red-600 hover:text-red-800"
+        const tbody = table.querySelector("tbody");
+
+        // INSERIR nova linha (com data corretamente formatada)
+        tbody.insertAdjacentHTML("afterbegin", `
+            <tr id="block-row-${json.item.id}" class="border-b bg-green-50 hover:bg-gray-50 transition">
+                <td class="py-2 px-2 font-medium">
+                    ${formatDateBR(json.item.date)}
+                </td>
+                <td class="py-2 px-2">
+                    ${json.item.reason ? json.item.reason : "-"}
+                </td>
+                <td class="py-2 px-2 text-right">
+                    <button
+                        class="delete-block text-red-600 hover:text-red-800 font-semibold"
                         data-id="${json.item.id}">
-                    Excluir
-                </button>
-            </td>
-        </tr>
-    `);
+                        Excluir
+                    </button>
+                </td>
+            </tr>
+        `);
 
-    form.reset();
+        form.reset();
+        if (btn) btn.disabled = false;
+
+    } catch (error) {
+        console.error("Erro ao processar bloqueio:", error);
+
+        Swal.fire({
+            icon: "error",
+            title: "Erro",
+            text: "Falha ao comunicar com o servidor."
+        });
+
+        if (btn) btn.disabled = false;
+    }
 });
 
 
-/* ============================================================
+/* ============================================================================
    EXCLUIR BLOQUEIO — SWEETALERT + AJAX
-   ============================================================ */
-document.addEventListener('click', async function(e) {
+   ============================================================================ */
+document.addEventListener('click', async function (e) {
     if (!e.target.classList.contains('delete-block')) return;
 
     e.preventDefault();
@@ -106,38 +136,62 @@ document.addEventListener('click', async function(e) {
 
     if (!confirm.isConfirmed) return;
 
-    const response = await fetch(`/professional/schedule/blocked/${id}`, {
-        method: "DELETE",
-        headers: {
-            "X-Requested-With": "XMLHttpRequest",
-            "X-CSRF-TOKEN": document.querySelector('input[name=_token]').value
+    try {
+        const response = await fetch(`/professional/schedule/blocked/${id}`, {
+            method: "DELETE",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRF-TOKEN": CSRF
+            }
+        });
+
+        const json = await response.json();
+
+        if (!json.success) return;
+
+        const row = document.getElementById(`block-row-${id}`);
+
+        if (row) {
+            row.classList.add("bg-red-100");
+            setTimeout(() => row.remove(), 250);
         }
-    });
 
-    const json = await response.json();
+        Swal.fire({
+            icon: "success",
+            title: "Removido!",
+            text: json.message,
+            timer: 1500,
+            showConfirmButton: false
+        });
 
-    if (!json.success) return;
+        // Se tabela ficar vazia → exibir texto
+        const table = document.getElementById("blocked-table");
+        const tbody = table?.querySelector("tbody");
 
-    const row = document.getElementById(`block-row-${id}`);
-    row.classList.add("bg-red-100");
+        if (tbody && tbody.children.length === 0) {
+            document.getElementById("blocked-list-container").innerHTML = `
+                <p id="blocked-empty" class="text-gray-500 text-sm py-2 text-center">
+                    Nenhuma data bloqueada.
+                </p>
+            `;
+        }
 
-    setTimeout(() => row.remove(), 250);
+    } catch (error) {
+        console.error("Erro ao excluir:", error);
 
-    Swal.fire({
-        icon: "success",
-        title: "Removido!",
-        text: json.message,
-        timer: 1500,
-        showConfirmButton: false
-    });
+        Swal.fire({
+            icon: "error",
+            title: "Erro",
+            text: "Falha ao comunicar com o servidor."
+        });
+    }
 });
 
 
-/* ============================================================
+/* ============================================================================
    EXCLUIR PERÍODO — SWEETALERT + AJAX
-   (NOVO BLOCO — sem alterar nada do que já funcionava)
-   ============================================================ */
-document.addEventListener('click', async function(e) {
+   ============================================================================ */
+document.addEventListener('click', async function (e) {
     if (!e.target.classList.contains('delete-period')) return;
 
     e.preventDefault();
@@ -157,30 +211,41 @@ document.addEventListener('click', async function(e) {
 
     if (!confirm.isConfirmed) return;
 
-    const response = await fetch(`/professional/schedule/period/${id}`, {
-        method: "DELETE",
-        headers: {
-            "X-Requested-With": "XMLHttpRequest",
-            "X-CSRF-TOKEN": document.querySelector('input[name=_token]').value
+    try {
+        const response = await fetch(`/professional/schedule/period/${id}`, {
+            method: "DELETE",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRF-TOKEN": CSRF
+            }
+        });
+
+        const json = await response.json();
+
+        if (!json.success) return;
+
+        const row = document.getElementById(`period-row-${id}`);
+        if (row) {
+            row.classList.add("bg-red-100");
+            setTimeout(() => row.remove(), 250);
         }
-    });
 
-    const json = await response.json();
+        Swal.fire({
+            icon: "success",
+            title: "Período removido",
+            text: json.message,
+            timer: 1500,
+            showConfirmButton: false
+        });
 
-    if (!json.success) return;
+    } catch (error) {
+        console.error("Erro ao excluir período:", error);
 
-    const row = document.getElementById(`period-row-${id}`);
-    row.classList.add("bg-red-100");
-
-    setTimeout(() => row.remove(), 250);
-
-    Swal.fire({
-        icon: "success",
-        title: "Período removido",
-        text: json.message,
-        timer: 1500,
-        showConfirmButton: false
-    });
-
+        Swal.fire({
+            icon: "error",
+            title: "Erro",
+            text: "Falha ao comunicar com o servidor."
+        });
+    }
 });
 </script>

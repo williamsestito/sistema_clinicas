@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\{
     Tenant,
     User,
+    Client,
     Professional,
+    ProfessionalProcedure,
     SchedulePeriod,
     SchedulePeriodDay,
     BlockedDate,
-    Service,
-    Client,
     Appointment,
     AppointmentLog
 };
@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
     {
         /*
         |--------------------------------------------------------------------------
-        | 1) Tenant padrão
+        | TENANT PADRÃO
         |--------------------------------------------------------------------------
         */
         $tenant = Tenant::firstOrCreate(
@@ -39,236 +39,179 @@ class DatabaseSeeder extends Seeder
 
         /*
         |--------------------------------------------------------------------------
-        | 2) Admin
+        | OWNER DO SISTEMA
         |--------------------------------------------------------------------------
         */
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@admin.com'],
-            [
-                'tenant_id' => $tenant->id,
-                'name' => 'Administrador do Sistema',
-                'password' => Hash::make('123123'),
-                'role' => 'admin',
-                'active' => true,
-            ]
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | 3) Profissionais
-        |--------------------------------------------------------------------------
-        */
-        $prof1 = User::firstOrCreate(
-            ['email' => 'dra.juliana@clinica.com'],
-            [
-                'tenant_id' => $tenant->id,
-                'name' => 'Dra. Juliana',
-                'password' => Hash::make('123123'),
-                'role' => 'professional',
-                'active' => true,
-            ]
-        );
-
-        $prof2 = User::firstOrCreate(
-            ['email' => 'dr.marcos@clinica.com'],
-            [
-                'tenant_id' => $tenant->id,
-                'name' => 'Dr. Marcos',
-                'password' => Hash::make('123123'),
-                'role' => 'professional',
-                'active' => true,
-            ]
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | 4) Perfil Profissional
-        |--------------------------------------------------------------------------
-        */
-        $professional1 = Professional::firstOrCreate([
+        $owner = User::create([
             'tenant_id' => $tenant->id,
-            'user_id'   => $prof1->id,
-            'specialty' => 'Dermatologia',
-            'bio'       => 'Especialista em estética facial e cuidados com a pele.',
-            'active'    => true,
+            'name' => 'Dono do Sistema',
+            'email' => 'owner@admin.com',
+            'password' => Hash::make('123123'),
+            'role' => 'owner',
+            'active' => true,
         ]);
 
-        $professional2 = Professional::firstOrCreate([
+        /*
+        |--------------------------------------------------------------------------
+        | ADMIN
+        |--------------------------------------------------------------------------
+        */
+        $admin = User::create([
             'tenant_id' => $tenant->id,
-            'user_id'   => $prof2->id,
-            'specialty' => 'Ortopedia',
-            'bio'       => 'Atendimento especializado em lesões musculares e articulares.',
-            'active'    => true,
+            'name' => 'Administrador',
+            'email' => 'admin@admin.com',
+            'password' => Hash::make('123123'),
+            'role' => 'admin',
+            'active' => true,
         ]);
 
         /*
         |--------------------------------------------------------------------------
-        | 5) Serviços
+        | PROFISSIONAIS
         |--------------------------------------------------------------------------
         */
-        $service1 = Service::firstOrCreate([
-            'tenant_id'       => $tenant->id,
-            'professional_id' => $professional1->id,
-            'name'            => 'Consulta de Dermatologia',
-            'description'     => 'Avaliação de pele, tratamento de acne e manchas.',
-            'duration_min'    => 30,
-            'price'           => 250.00,
-            'active'          => true,
-        ]);
-
-        $service2 = Service::firstOrCreate([
-            'tenant_id'       => $tenant->id,
-            'professional_id' => $professional2->id,
-            'name'            => 'Avaliação Ortopédica',
-            'description'     => 'Consulta de diagnóstico e acompanhamento ortopédico.',
-            'duration_min'    => 45,
-            'price'           => 300.00,
-            'active'          => true,
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | 6) PERÍODOS (modelo novo — sem schedule_period_days)
-        |--------------------------------------------------------------------------
-        */
-        $period1 = SchedulePeriod::create([
-            'tenant_id'       => $tenant->id,
-            'professional_id' => $professional1->id,
-            'start_date'      => now()->toDateString(),
-            'end_date'        => now()->addDays(60)->toDateString(),
-            'active_days'     => [1,2,3,4,5],
-        ]);
-
-        $period2 = SchedulePeriod::create([
-            'tenant_id'       => $tenant->id,
-            'professional_id' => $professional2->id,
-            'start_date'      => now()->toDateString(),
-            'end_date'        => now()->addDays(60)->toDateString(),
-            'active_days'     => [1,2,3,4,5],
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | 7) HORÁRIOS FIXOS POR DIA (versão correta)
-        |--------------------------------------------------------------------------
-        */
-        foreach ([1,2,3,4,5] as $weekday) {
-            SchedulePeriodDay::create([
-                'tenant_id'       => $tenant->id,
-                'professional_id' => $professional1->id,
-                'weekday'         => $weekday,
-                'start_time'      => '09:00',
-                'end_time'        => '17:00',
-                'break_start'     => '12:00',
-                'break_end'       => '13:00',
-                'duration'        => 30,
-                'available'       => true,
-            ]);
-        }
-
-        foreach ([1,2,3,4,5] as $weekday) {
-            SchedulePeriodDay::create([
-                'tenant_id'       => $tenant->id,
-                'professional_id' => $professional2->id,
-                'weekday'         => $weekday,
-                'start_time'      => '08:00',
-                'end_time'        => '16:00',
-                'break_start'     => '12:00',
-                'break_end'       => '12:45',
-                'duration'        => 45,
-                'available'       => true,
-            ]);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 8) Bloqueio exemplo
-        |--------------------------------------------------------------------------
-        */
-        BlockedDate::updateOrCreate([
-            'tenant_id'       => $tenant->id,
-            'professional_id' => $professional1->id,
-            'date'            => now()->addDays(2)->toDateString(),
-        ], [
-            'reason'          => 'Congresso Médico',
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | 9) Clientes
-        |--------------------------------------------------------------------------
-        */
-        $clients = collect([
-            ['name' => 'Maria Silva', 'email' => 'maria@cliente.com', 'phone' => '11999998888'],
-            ['name' => 'João Souza',  'email' => 'joao@cliente.com',  'phone' => '11988887777'],
-            ['name' => 'Ana Pereira', 'email' => 'ana@cliente.com',   'phone' => '11977776666'],
-        ])->map(function ($c) use ($tenant) {
-            return Client::firstOrCreate(
-                ['email' => $c['email']],
-                [
-                    'tenant_id' => $tenant->id,
-                    'name'      => $c['name'],
-                    'phone'     => $c['phone'],
-                    'birthdate' => '1990-05-12',
-                    'consent_marketing' => true,
-                    'password'  => Hash::make('123123'),
-                ]
-            );
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | 10) Agendamentos
-        |--------------------------------------------------------------------------
-        */
-        $now = Carbon::now();
-
-        $appointments = [
+        $profUsers = [
             [
-                'client_id'       => $clients[0]->id,
-                'professional_id' => $professional1->id,
-                'service_id'      => $service1->id,
-                'start_at'        => $now->copy()->addDays(1)->setTime(9, 0),
-                'end_at'          => $now->copy()->addDays(1)->setTime(9, 30),
-                'status'          => 'pending',
-                'notes'           => 'Primeira consulta de avaliação facial.',
+                'name' => 'Dra. Juliana Souza',
+                'email' => 'juliana@clinica.com',
+                'state' => 'SC',
+                'city' => 'Joinville',
+                'specialty' => ['Dermatologia', 'Estética Facial'],
+                'bio' => 'Especialista em pele e tratamentos avançados.',
             ],
             [
-                'client_id'       => $clients[1]->id,
-                'professional_id' => $professional2->id,
-                'service_id'      => $service2->id,
-                'start_at'        => $now->copy()->addDays(2)->setTime(10, 0),
-                'end_at'          => $now->copy()->addDays(2)->setTime(10, 45),
-                'status'          => 'confirmed',
-                'notes'           => 'Avaliação de dor no joelho.',
+                'name' => 'Dr. Marcos Lima',
+                'email' => 'marcos@clinica.com',
+                'state' => 'SC',
+                'city' => 'Blumenau',
+                'specialty' => ['Ortopedia'],
+                'bio' => 'Especialista em lesões esportivas e articulares.',
             ],
             [
-                'client_id'       => $clients[2]->id,
-                'professional_id' => $professional1->id,
-                'service_id'      => $service1->id,
-                'start_at'        => $now->copy()->subDays(3)->setTime(15, 0),
-                'end_at'          => $now->copy()->subDays(3)->setTime(15, 30),
-                'status'          => 'done',
-                'notes'           => 'Retorno pós-tratamento.',
+                'name' => 'Dra. Carla Almeida',
+                'email' => 'carla@clinica.com',
+                'state' => 'SP',
+                'city' => 'São Paulo',
+                'specialty' => ['Nutrição', 'Emagrecimento'],
+                'bio' => 'Especialista em emagrecimento saudável.',
             ],
         ];
 
-        foreach ($appointments as $data) {
-            $appointment = Appointment::create(array_merge($data, [
-                'tenant_id' => $tenant->id,
-                'source'    => 'web',
-            ]));
+        $professionals = [];
 
-            AppointmentLog::create([
-                'appointment_id'     => $appointment->id,
-                'from_status'        => 'pending',
-                'to_status'          => $appointment->status,
-                'changed_by_user_id' => $admin->id,
-                'note'               => 'Status inicial configurado pelo sistema.',
-                'changed_at'         => now(),
+        foreach ($profUsers as $prof) {
+
+            $user = User::create([
+                'tenant_id' => $tenant->id,
+                'name'      => $prof['name'],
+                'email'     => $prof['email'],
+                'password'  => Hash::make('123123'),
+                'role'      => 'professional',
+                'active'    => true,
+            ]);
+
+            $professional = Professional::create([
+                'tenant_id' => $tenant->id,
+                'user_id'   => $user->id,
+                'specialty' => $prof['specialty'],
+                'bio'       => $prof['bio'],
+                'state'     => $prof['state'],
+                'city'      => $prof['city'],
+                'photo_url' => null,
+                'show_prices' => true,
+                'default_start_hour' => '08:00',
+                'default_end_hour'   => '17:00',
+                'default_consultation_time' => 30,
+                'active'    => true,
+            ]);
+
+            $professionals[] = $professional;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | PERÍODO + DIAS
+        |--------------------------------------------------------------------------
+        */
+        foreach ($professionals as $pro) {
+
+            $period = SchedulePeriod::create([
+                'tenant_id' => $tenant->id,
+                'professional_id' => $pro->id,
+                'start_date' => now()->toDateString(),
+                'end_date'   => now()->addDays(60)->toDateString(),
+                'active_days' => [1,2,3,4,5], // segunda–sexta
+            ]);
+
+            foreach ([1,2,3,4,5] as $weekday) {
+                SchedulePeriodDay::create([
+                    'tenant_id' => $tenant->id,
+                    'professional_id' => $pro->id,
+                    'period_id' => $period->id,
+                    'weekday' => $weekday,
+                    'start_time' => '08:00',
+                    'end_time'   => '17:00',
+                    'break_start' => '12:00',
+                    'break_end' => '13:00',
+                    'duration' => 30,
+                    'available' => true,
+                ]);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CLIENTES
+        |--------------------------------------------------------------------------
+        */
+        $clients = [];
+
+        foreach ([
+            ['name' => 'Maria Silva', 'email' => 'maria@cliente.com'],
+            ['name' => 'João Souza',  'email' => 'joao@cliente.com'],
+        ] as $c) {
+
+            $clients[] = Client::create([
+                'tenant_id' => $tenant->id,
+                'name' => $c['name'],
+                'email' => $c['email'],
+                'password' => Hash::make('123123'),
+                'active' => true,
             ]);
         }
 
-        $this->command->info('Seeder executado com sucesso!');
+        /*
+        |--------------------------------------------------------------------------
+        | LOG FINAL PARA DEV
+        |--------------------------------------------------------------------------
+        */
+
+        $this->command->info("\n===============================");
+        $this->command->info(" USUÁRIOS GERADOS NO SEEDER");
+        $this->command->info("===============================\n");
+
+        // OWNER
+        $this->command->info("OWNER:");
+        $this->command->warn("  Email: {$owner->email} | Senha: 123123\n");
+
+        // ADMIN
+        $this->command->info("ADMIN:");
+        $this->command->warn("  Email: {$admin->email} | Senha: 123123\n");
+
+        // PROFISSIONAIS
+        $this->command->info("PROFISSIONAIS:");
+        foreach ($professionals as $pro) {
+            $this->command->line(" - {$pro->user->name} ({$pro->city}/{$pro->state})");
+            $this->command->warn("    Email: {$pro->user->email} | Senha: 123123\n");
+        }
+
+        // CLIENTES
+        $this->command->info("CLIENTES:");
+        foreach ($clients as $cli) {
+            $this->command->line(" - {$cli->name}");
+            $this->command->warn("    Email: {$cli->email} | Senha: 123123\n");
+        }
+
+        $this->command->info("\nSeeder executado com sucesso!\n");
     }
 }

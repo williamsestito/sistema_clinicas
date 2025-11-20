@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SchedulePeriod extends Model
 {
+    protected $table = 'schedule_periods';
+
     protected $fillable = [
         'tenant_id',
         'professional_id',
@@ -20,7 +23,9 @@ class SchedulePeriod extends Model
         'end_date'    => 'date',
     ];
 
-    // Garante que active_days sempre seja array de inteiros
+    /**
+     * Garante que active_days sempre será um array numérico
+     */
     public function getActiveDaysAttribute($value)
     {
         if (!$value) {
@@ -28,13 +33,17 @@ class SchedulePeriod extends Model
         }
 
         return collect(json_decode($value, true))
-            ->map(fn($d) => (int) $d)
+            ->map(fn ($d) => (int) $d)
+            ->values()
             ->toArray();
     }
 
-    // Um período tem vários horários semanais
-    public function schedules()
+    /**
+     * Relacionamento CORRETO:
+     * Um período possui vários dias configurados (SchedulePeriodDay)
+     */
+    public function days(): HasMany
     {
-        return $this->hasMany(Schedule::class, 'period_id');
+        return $this->hasMany(SchedulePeriodDay::class, 'period_id');
     }
 }

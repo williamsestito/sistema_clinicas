@@ -16,7 +16,7 @@
 
     @php
         $activeDays = $selectedPeriod->active_days ?? [];
-        $lastSaved = session('saved_days') ?? [];
+        $lastSaved  = session('saved_days') ?? [];
     @endphp
 
     <form action="{{ route('professional.schedule.weekly.store') }}" method="POST" id="schedule-form">
@@ -39,8 +39,8 @@
                 @foreach($days as $weekday => $label)
                     @php
                         $schedule = $weeklySchedules[$weekday] ?? null;
-                        $enabled = in_array($weekday, $activeDays);
-                        $saved = in_array($weekday, $lastSaved);
+                        $enabled  = in_array($weekday, $activeDays);
+                        $saved    = in_array($weekday, $lastSaved);
                     @endphp
 
                     <tr class="schedule-row border-b {{ $saved ? 'bg-green-50' : '' }}">
@@ -87,12 +87,12 @@
                                    {{ $enabled ? '' : 'disabled' }}>
                         </td>
 
-                        {{-- Duração --}}
+                        {{-- Duração (CORRETO — LÊ duration e envia como slot_min) --}}
                         <td class="py-3 text-center">
                             <input type="number"
                                    name="schedules[{{ $weekday }}][slot_min]"
                                    class="duration input-premium editable-field w-20 text-center"
-                                   value="{{ $schedule->slot_min ?? 30 }}"
+                                   value="{{ $schedule->duration ?? 30 }}"
                                    min="5" step="5"
                                    {{ $enabled ? '' : 'disabled' }}>
                         </td>
@@ -111,7 +111,7 @@
 
 {{-- Scripts --}}
 <script>
-/* Marca campos editados em amarelo */
+/* Marca campos editados */
 document.querySelectorAll(".editable-field").forEach(el => {
     el.addEventListener("input", () => {
         el.classList.add("bg-yellow-100");
@@ -129,21 +129,21 @@ document.getElementById('copy-schedule-btn')?.addEventListener('click', function
     const get = cls => row.querySelector(cls)?.value || '';
 
     const ref = {
-        start:   get('.start-time'),
-        end:     get('.end-time'),
-        bStart:  get('.break-start'),
-        bEnd:    get('.break-end'),
-        dur:     get('.duration'),
+        start:  get('.start-time'),
+        end:    get('.end-time'),
+        bStart: get('.break-start'),
+        bEnd:   get('.break-end'),
+        dur:    get('.duration'),
     };
 
     document.querySelectorAll('.schedule-row').forEach(r => {
         if (r.querySelector('.start-time:disabled')) return;
 
-        r.querySelector('.start-time').value = ref.start;
-        r.querySelector('.end-time').value = ref.end;
-        r.querySelector('.break-start').value = ref.bStart;
-        r.querySelector('.break-end').value = ref.bEnd;
-        r.querySelector('.duration').value = ref.dur;
+        r.querySelector('.start-time').value   = ref.start;
+        r.querySelector('.end-time').value     = ref.end;
+        r.querySelector('.break-start').value  = ref.bStart;
+        r.querySelector('.break-end').value    = ref.bEnd;
+        r.querySelector('.duration').value     = ref.dur;
 
         r.classList.add("bg-yellow-100");
     });

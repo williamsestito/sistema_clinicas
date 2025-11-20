@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Auth Controllers
+// Auth
 use App\Http\Controllers\Auth\{
     LoginController,
     RegisterController,
@@ -10,7 +10,7 @@ use App\Http\Controllers\Auth\{
     ResetPasswordController
 };
 
-// Sistema Controllers
+// Sistema
 use App\Http\Controllers\{
     UserController,
     PacientController,
@@ -20,19 +20,20 @@ use App\Http\Controllers\{
     ProfessionalProcedureController,
     ProfessionalReportController,
     ProfessionalAppointmentRequestController,
-
     ProfessionalScheduleController,
     ProfessionalScheduleConfigController,
-
     SchedulePeriodController,
     SchedulePeriodDayController,
     BlockedDateController
 };
 
+// Cliente Público
+use App\Http\Controllers\ClientPublicScheduleController;
+
 
 /*
 |--------------------------------------------------------------------------
-| ROTAS PÚBLICAS
+| PUBLIC
 |--------------------------------------------------------------------------
 */
 Route::get('/', fn() => redirect()->route('login'));
@@ -50,10 +51,26 @@ Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showRese
 Route::post('/reset-password',        [ResetPasswordController::class, 'reset'])->name('password.update');
 
 
+/*
+|--------------------------------------------------------------------------
+| CLIENTE — BUSCA PÚBLICA (NÃO REQUER LOGIN)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('public')->name('public.')->group(function () {
+    Route::get('/agendar',          [ClientPublicScheduleController::class, 'index'])->name('agendar');
+    Route::get('/estados',          [ClientPublicScheduleController::class, 'estados'])->name('estados');
+    Route::get('/cidades',          [ClientPublicScheduleController::class, 'cidades'])->name('cidades');
+    Route::get('/especialidades',   [ClientPublicScheduleController::class, 'especialidades'])->name('especialidades');
+    Route::get('/procedimentos',    [ClientPublicScheduleController::class, 'procedimentos'])->name('procedimentos');
+    Route::get('/profissionais',    [ClientPublicScheduleController::class, 'profissionais'])->name('profissionais');
+    Route::get('/horarios/{id}',    [ClientPublicScheduleController::class, 'horarios'])->name('horarios');
+    Route::post('/pre-agendar',     [ClientPublicScheduleController::class, 'preAgendar'])->name('preagendar');
+});
+
 
 /*
 |--------------------------------------------------------------------------
-| ÁREA AUTENTICADA (TODOS LOGADOS)
+| AUTHENTICATED AREA
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:web'])->group(function () {
@@ -69,10 +86,9 @@ Route::middleware(['auth:web'])->group(function () {
     });
 
 
-
     /*
     |--------------------------------------------------------------------------
-    | COLABORADORES
+    | EMPLOYEES
     |--------------------------------------------------------------------------
     */
     Route::prefix('employees')->name('employees.')->group(function () {
@@ -85,7 +101,6 @@ Route::middleware(['auth:web'])->group(function () {
     });
 
 
-
     /*
     |--------------------------------------------------------------------------
     | ÁREA DO PROFISSIONAL
@@ -93,33 +108,16 @@ Route::middleware(['auth:web'])->group(function () {
     */
     Route::prefix('professional')->name('professional.')->group(function () {
 
-        // Dashboard
         Route::get('/dashboard', [ProfessionalDashboardController::class, 'index'])->name('dashboard');
 
-        // Pacientes
         Route::get('/pacients',        [ProfessionalPacientController::class, 'index'])->name('pacients');
         Route::get('/pacients/{id}',   [ProfessionalPacientController::class, 'show'])->name('pacients.show');
 
-        // Agenda diária
         Route::get('/schedule', [ProfessionalScheduleController::class, 'index'])->name('schedule');
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | CONFIGURAÇÃO COMPLETA DA AGENDA
-        |--------------------------------------------------------------------------
-        */
         Route::get('/schedule/config', [ProfessionalScheduleConfigController::class, 'index'])
             ->name('schedule.config');
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | PERÍODOS
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('schedule/period')->name('schedule.period.')->group(function () {
             Route::get('/',          [SchedulePeriodController::class, 'index'])->name('index');
             Route::post('/',         [SchedulePeriodController::class, 'store'])->name('store');
@@ -127,13 +125,6 @@ Route::middleware(['auth:web'])->group(function () {
             Route::delete('/{id}',   [SchedulePeriodController::class, 'destroy'])->name('destroy');
         });
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | HORÁRIOS POR DIA (Scheduler)
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('schedule/day')->name('schedule.day.')->group(function () {
             Route::get('/{periodId}',       [SchedulePeriodDayController::class, 'index'])->name('index');
             Route::post('/{periodId}',      [SchedulePeriodDayController::class, 'store'])->name('store');
@@ -141,100 +132,55 @@ Route::middleware(['auth:web'])->group(function () {
             Route::delete('/delete/{dayId}',[SchedulePeriodDayController::class, 'destroy'])->name('destroy');
         });
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | HORÁRIOS SEMANAIS (Weekly - tela Configurar Agenda)
-        |--------------------------------------------------------------------------
-        */
         Route::post('/schedule/weekly', [ProfessionalScheduleConfigController::class, 'storeWeekly'])
             ->name('schedule.weekly.store');
 
-
-
         /*
         |--------------------------------------------------------------------------
-        | DIAS BLOQUEADOS
+        | 🔒 BLOQUEIO DE DIAS (AJUSTADO)
         |--------------------------------------------------------------------------
         */
         Route::prefix('schedule/blocked')->name('schedule.blocked.')->group(function () {
-            Route::get('/',        [BlockedDateController::class, 'index'])->name('index');
-            Route::post('/',       [BlockedDateController::class, 'store'])->name('store');
-            Route::delete('/{id}', [BlockedDateController::class, 'destroy'])->name('destroy');
+            Route::get('/',        [ProfessionalScheduleConfigController::class, 'indexBlocked'])->name('index');
+            Route::post('/',       [ProfessionalScheduleConfigController::class, 'blockDate'])->name('store');
+            Route::delete('/{id}', [ProfessionalScheduleConfigController::class, 'unblockDate'])->name('destroy');
         });
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Solicitações de Agendamento
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('appointments')->name('appointments.')->group(function () {
             Route::get('/requests',       [ProfessionalAppointmentRequestController::class, 'index'])->name('requests');
             Route::post('/{id}/approve',  [ProfessionalAppointmentRequestController::class, 'approve'])->name('approve');
             Route::post('/{id}/reject',   [ProfessionalAppointmentRequestController::class, 'reject'])->name('reject');
         });
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Procedimentos
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('procedures')->name('procedures.')->group(function () {
             Route::get('/',           [ProfessionalProcedureController::class, 'index'])->name('index');
             Route::post('/store',     [ProfessionalProcedureController::class, 'store'])->name('store');
             Route::delete('/{id}',    [ProfessionalProcedureController::class, 'destroy'])->name('destroy');
         });
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Relatórios
-        |--------------------------------------------------------------------------
-        */
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/appointments', [ProfessionalReportController::class, 'appointments'])->name('appointments');
             Route::get('/finance',      [ProfessionalReportController::class, 'finance'])->name('finance');
         });
 
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Perfil do Profissional
-        |--------------------------------------------------------------------------
-        */
-        Route::get('/profile',               [ProfessionalProfileController::class, 'index'])->name('profile');
-        Route::post('/profile/update',       [ProfessionalProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile',         [ProfessionalProfileController::class, 'index'])->name('profile');
+        Route::post('/profile/update', [ProfessionalProfileController::class, 'update'])->name('profile.update');
     });
 
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Logout Web
-    |--------------------------------------------------------------------------
-    */
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
 });
-
 
 
 /*
 |--------------------------------------------------------------------------
-| ÁREA CLIENTE
+| CLIENTE LOGADO
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:client'])
     ->prefix('client')
     ->name('client.')
     ->group(function () {
-
         Route::view('/dashboard',    'client.dashboard')->name('dashboard');
         Route::view('/appointments', 'client.appointments')->name('appointments');
         Route::view('/schedule',     'client.schedule')->name('schedule');
@@ -242,4 +188,3 @@ Route::middleware(['auth:client'])
 
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     });
-
