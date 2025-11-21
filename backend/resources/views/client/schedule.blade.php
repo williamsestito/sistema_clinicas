@@ -3,7 +3,19 @@
 @section('title', 'Agendar Consulta')
 
 @section('content')
-<div x-data="agendamento()" class="p-4 sm:p-6 space-y-6">
+@php
+    $clientUser = auth('client')->user();
+@endphp
+
+<!-- Garantindo CSRF para fetch() -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<div x-data="agendamento({
+        clientName: '{{ $clientUser->name ?? '' }}',
+        clientEmail: '{{ $clientUser->email ?? '' }}'
+    })"
+     x-init="init()"
+     class="p-4 sm:p-6 space-y-6">
 
   <!-- Cabeçalho -->
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
@@ -23,20 +35,25 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">UF</label>
-        <select x-model="uf" @change="carregarCidades()" class="w-full border rounded-md px-3 py-2 text-sm">
+        <select x-model="uf"
+                @change="changeUf"
+                class="w-full border rounded-md px-3 py-2 text-sm">
           <option value="">Selecione</option>
-          <template x-for="estado in ufs" :key="estado.sigla">
-            <option :value="estado.sigla" x-text="estado.nome"></option>
+          <template x-for="estado in ufs" :key="estado">
+            <option :value="estado" x-text="estado"></option>
           </template>
         </select>
       </div>
 
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Cidade</label>
-        <select x-model="cidade" :disabled="!uf" class="w-full border rounded-md px-3 py-2 text-sm">
+        <select x-model="cidade"
+                @change="changeCidade"
+                :disabled="!uf"
+                class="w-full border rounded-md px-3 py-2 text-sm">
           <option value="">Selecione</option>
           <template x-for="c in cidades" :key="c">
-            <option x-text="c"></option>
+            <option :value="c" x-text="c"></option>
           </template>
         </select>
       </div>
@@ -46,12 +63,16 @@
   <!-- Etapa 2 -->
   <template x-if="cidade">
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow border border-gray-100">
-      <h2 class="font-semibold text-gray-800 mb-4 text-base sm:text-lg">2️⃣ Profissional, especialidade e procedimento</h2>
+      <h2 class="font-semibold text-gray-800 mb-4 text-base sm:text-lg">2️⃣ Selecione os filtros</h2>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <!-- PROFISSIONAL -->
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Profissional</label>
-          <select x-model="profissional" class="w-full border rounded-md px-3 py-2 text-sm">
+          <select x-model="profissional"
+                  @change="changeProfissional"
+                  class="w-full border rounded-md px-3 py-2 text-sm">
             <option value="">Selecione</option>
             <template x-for="p in profissionais" :key="p.id">
               <option :value="p.id" x-text="p.nome"></option>
@@ -59,26 +80,40 @@
           </select>
         </div>
 
+        <!-- ESPECIALIDADE -->
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Especialidade</label>
-          <select x-model="especialidade" class="w-full border rounded-md px-3 py-2 text-sm">
+          <select x-model="especialidade"
+                  @change="changeEspecialidade"
+                  class="w-full border rounded-md px-3 py-2 text-sm">
             <option value="">Selecione</option>
             <template x-for="e in especialidades" :key="e">
-              <option x-text="e"></option>
+              <option :value="e" x-text="e"></option>
             </template>
           </select>
         </div>
 
+        <!-- PROCEDIMENTO -->
         <div>
           <label class="block text-xs font-medium text-gray-500 mb-1">Procedimento</label>
-          <select x-model="procedimento" class="w-full border rounded-md px-3 py-2 text-sm">
+          <select x-model="procedimento"
+                  @change="changeProcedimento"
+                  class="w-full border rounded-md px-3 py-2 text-sm">
             <option value="">Selecione</option>
             <template x-for="proc in procedimentos" :key="proc">
-              <option x-text="proc"></option>
+              <option :value="proc" x-text="proc"></option>
             </template>
           </select>
         </div>
       </div>
+
+      <template x-if="profissionalSelecionado">
+        <div class="mt-4 p-3 border border-gray-100 rounded-lg bg-gray-50 text-xs text-gray-600">
+          <p class="font-semibold text-gray-700" x-text="profissionalSelecionado.nome"></p>
+          <p x-text="'Especialidades: ' + (profissionalSelecionado.especialidades?.join(', ') || '-')"></p>
+          <p x-text="'Endereço: ' + (profissionalSelecionado.endereco || '-')"></p>
+        </div>
+      </template>
     </div>
   </template>
 
@@ -90,9 +125,11 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <input type="date"
                x-model="dataSelecionada"
-               class="border rounded-md px-3 py-2 text-sm w-full sm:w-auto focus:ring-green-200 focus:border-green-400 transition">
-        <button @click="carregarHorarios()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium w-full sm:w-auto text-center">
+               :min="minDate"
+               class="border rounded-md px-3 py-2 text-sm w-full sm:w-auto">
+
+        <button @click="carregarHorarios"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm">
           Ver horários disponíveis
         </button>
       </div>
@@ -102,9 +139,9 @@
   <!-- Etapa 4 -->
   <template x-if="horarios.length > 0">
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow border border-gray-100">
-      <h2 class="font-semibold text-gray-800 mb-3 text-base sm:text-lg">
+      <h2 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">
         4️⃣ Horários disponíveis para
-        <span class="text-green-700 font-medium" x-text="dataSelecionada"></span>
+        <span class="text-green-700 font-medium" x-text="formatarData(dataSelecionada)"></span>
       </h2>
 
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3 mt-3">
@@ -119,148 +156,19 @@
         </template>
       </div>
 
-      <div class="flex flex-col sm:flex-row justify-end mt-6 gap-3">
+      <div class="flex justify-end mt-6">
         <button @click="confirmarAgendamento"
-                class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md text-sm font-medium w-full sm:w-auto">
+                class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md text-sm">
           Confirmar Pré-Agendamento
         </button>
       </div>
-
-      <p class="text-xs text-gray-500 mt-3 text-justify sm:text-left">
-        O agendamento será enviado para o profissional e ficará com status
-        <b>pendente</b> até confirmação.
-      </p>
     </div>
   </template>
 </div>
 
-<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script>
-function agendamento() {
-  return {
-    uf: '',
-    cidade: '',
-    profissional: '',
-    especialidade: '',
-    procedimento: '',
-    dataSelecionada: '',
-    horarioSelecionado: '',
-    horarios: [],
-    diasBloqueados: ['2025-11-12'],
+{{-- Script corrigido --}}
+@include('client.schedule-script')
 
-    ufs: [
-      { nome: 'Santa Catarina', sigla: 'SC' },
-      { nome: 'Paraná', sigla: 'PR' },
-      { nome: 'São Paulo', sigla: 'SP' },
-    ],
-    cidades: [],
-    profissionais: [
-      { id: 1, nome: 'Dra. Juliana Souza' },
-      { id: 2, nome: 'Dr. Marcos Lima' },
-    ],
-    especialidades: ['Dermatologia', 'Fisioterapia', 'Nutrição'],
-    procedimentos: ['Consulta inicial', 'Retorno', 'Avaliação corporal'],
-
-    carregarCidades() {
-      const cidadesPorUF = {
-        SC: ['Joinville', 'Florianópolis', 'Blumenau'],
-        PR: ['Curitiba', 'Londrina', 'Maringá'],
-        SP: ['São Paulo', 'Campinas', 'Santos'],
-      };
-      this.cidades = cidadesPorUF[this.uf] || [];
-      this.cidade = '';
-    },
-
-    carregarHorarios() {
-      if (!this.dataSelecionada) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Selecione a data',
-          text: 'Escolha o dia para visualizar os horários disponíveis.',
-          confirmButtonColor: '#16a34a'
-        });
-        return;
-      }
-
-      if (this.diasBloqueados.includes(this.dataSelecionada)) {
-        this.horarios = [];
-        Swal.fire({
-          icon: 'info',
-          title: 'Profissional indisponível',
-          html: `
-            <p class="text-gray-700 text-sm">A profissional <b>Dra. Juliana Souza</b> não realizará atendimentos em 
-            <b>${new Date(this.dataSelecionada).toLocaleDateString('pt-BR')}</b>.</p>
-            <p class="text-gray-500 text-xs mt-2">Por favor, selecione outra data disponível.</p>
-          `,
-          confirmButtonText: 'Entendido',
-          confirmButtonColor: '#16a34a'
-        });
-        return;
-      }
-
-      this.horarios = ['08:00', '09:00', '10:30', '11:30', '13:00', '14:30', '16:00', '17:30'];
-    },
-
-    selecionarHorario(hora) {
-      this.horarioSelecionado = hora;
-    },
-
-    confirmarAgendamento() {
-      if (!this.uf || !this.cidade || !this.profissional || !this.procedimento || !this.dataSelecionada || !this.horarioSelecionado) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Campos obrigatórios',
-          text: 'Preencha todas as informações antes de confirmar o pré-agendamento.',
-          confirmButtonColor: '#16a34a'
-        });
-        return;
-      }
-
-      const profissionalSelecionado = this.profissionais.find(p => p.id == this.profissional)?.nome || 'Profissional não identificado';
-      const dataFormatada = new Date(this.dataSelecionada).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Pré-agendamento enviado!',
-        html: `
-          <div class="text-left text-gray-700 text-sm space-y-2 leading-relaxed">
-            <p><b>Profissional:</b> ${profissionalSelecionado}</p>
-            <p><b>Data:</b> ${dataFormatada}</p>
-            <p><b>Horário:</b> ${this.horarioSelecionado}</p>
-            <p><b>Status:</b> <span class="text-yellow-600 font-semibold">Pendente</span></p>
-            <p><b>Endereço da clínica:</b> <i>Definido nas configurações</i></p>
-          </div>
-
-          <div class="mt-6 flex items-center justify-between relative px-2">
-            <div class="flex flex-col items-center">
-              <div class="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center text-white text-xs shadow">✓</div>
-              <span class="text-xs mt-1 text-green-700 font-semibold">Enviado</span>
-            </div>
-            <div class="flex-1 h-0.5 bg-green-500 mx-2 animate-pulse"></div>
-            <div class="flex flex-col items-center">
-              <div class="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center text-white text-xs shadow">⏳</div>
-              <span class="text-xs mt-1 text-yellow-600 font-semibold">Aguardando</span>
-            </div>
-            <div class="flex-1 h-0.5 bg-gray-300 mx-2"></div>
-            <div class="flex flex-col items-center">
-              <div class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-white text-xs shadow">✔</div>
-              <span class="text-xs mt-1 text-gray-400 font-semibold">Confirmado</span>
-            </div>
-          </div>
-        `,
-        confirmButtonText: 'Fechar',
-        confirmButtonColor: '#16a34a',
-        background: '#fff',
-        color: '#374151',
-        width: 440,
-      });
-
-      this.horarioSelecionado = '';
-      this.horarios = [];
-    }
-  }
-}
-</script>
 @endsection

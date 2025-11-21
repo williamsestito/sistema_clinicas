@@ -11,6 +11,11 @@ class Client extends Authenticatable
 {
     use HasApiTokens, HasFactory;
 
+    /*
+    |--------------------------------------------------------------------------
+    | Atributos
+    |--------------------------------------------------------------------------
+    */
     protected $fillable = [
         'tenant_id',
         'user_id',
@@ -33,29 +38,47 @@ class Client extends Authenticatable
         'state',
         'consent_marketing',
         'notes',
-        'password',       // necessário para login
+        'password',  // login
         'active',
     ];
 
-    protected $hidden = ['password'];
-
-    protected $casts = [
-        'birthdate' => 'date',
-        'consent_marketing' => 'boolean',
-        'use_social_name' => 'boolean',
-        'active' => 'boolean',
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
-    // -------------------------------------------------------------------------
-    // Relacionamentos
-    // -------------------------------------------------------------------------
-    public function tenant()        { return $this->belongsTo(Tenant::class); }
-    public function user()          { return $this->belongsTo(User::class); }
-    public function appointments()  { return $this->hasMany(Appointment::class); }
+    protected $casts = [
+        'birthdate'          => 'date',
+        'consent_marketing'  => 'boolean',
+        'use_social_name'    => 'boolean',
+        'active'             => 'boolean',
+    ];
 
-    // -------------------------------------------------------------------------
-    // Scopes
-    // -------------------------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | Relacionamentos
+    |--------------------------------------------------------------------------
+    */
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
     public function scopeOfTenant($query, int $tenantId)
     {
         return $query->where('tenant_id', $tenantId);
@@ -66,9 +89,9 @@ class Client extends Authenticatable
         if (!$term) return $query;
 
         return $query->where(function ($q) use ($term) {
-            $q->where('name', 'like', "%{$term}%")
-              ->orWhere('email', 'like', "%{$term}%")
-              ->orWhere('phone', 'like', "%{$term}%");
+            $q->where('name', 'like', "%$term%")
+              ->orWhere('email', 'like', "%$term%")
+              ->orWhere('phone', 'like', "%$term%");
         });
     }
 
@@ -82,22 +105,35 @@ class Client extends Authenticatable
         return $query->orderBy('name', 'asc');
     }
 
-    // -------------------------------------------------------------------------
-    // Acessores / Mutators
-    // -------------------------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | Acessores
+    |--------------------------------------------------------------------------
+    */
     public function getAgeAttribute(): ?int
     {
-        return $this->birthdate ? $this->birthdate->age : null;
+        return $this->birthdate?->age;
     }
 
     public function getFormattedPhoneAttribute(): string
     {
         $digits = preg_replace('/\D/', '', $this->phone ?? '');
+
         if (!$digits) return '-';
 
         return match (strlen($digits)) {
-            11 => sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 5), substr($digits, 7)),
-            10 => sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 4), substr($digits, 6)),
+            11 => sprintf(
+                '(%s) %s-%s',
+                substr($digits, 0, 2),
+                substr($digits, 2, 5),
+                substr($digits, 7)
+            ),
+            10 => sprintf(
+                '(%s) %s-%s',
+                substr($digits, 0, 2),
+                substr($digits, 2, 4),
+                substr($digits, 6)
+            ),
             default => $this->phone,
         };
     }
@@ -107,12 +143,16 @@ class Client extends Authenticatable
         return $this->consent_marketing ? 'Aceitou comunicações' : 'Não aceitou';
     }
 
-    // -------------------------------------------------------------------------
-    // Mutator para hash automático da senha
-    // -------------------------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | Mutators
+    |--------------------------------------------------------------------------
+    | 🔥 Segurança: evita re-hash quando senha já estiver criptografada
+    |--------------------------------------------------------------------------
+    */
     public function setPasswordAttribute($value)
     {
-        if ($value && !str_starts_with($value, '$2y$')) {
+        if ($value && !str_starts_with((string) $value, '$2y$')) {
             $this->attributes['password'] = Hash::make($value);
         } else {
             $this->attributes['password'] = $value;

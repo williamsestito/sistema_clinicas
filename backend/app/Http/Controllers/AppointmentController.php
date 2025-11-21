@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
-
+    /**
+     * Lista agendamentos com filtros
+     */
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -23,43 +25,53 @@ class AppointmentController extends Controller
             ->where('tenant_id', $user->tenant_id)
             ->when($request->status, fn($q) => $q->where('status', $request->status))
             ->when($request->professional_id, fn($q) => $q->where('professional_id', $request->professional_id))
-            ->when($request->date, fn($q) => $q->whereDate('start_at', $request->date))
+            ->when($request->start_at, fn($q) => $q->whereDate('start_at', $request->start_at))
             ->orderBy('start_at', 'desc');
 
         return response()->json($query->paginate(20));
     }
 
+    /**
+     * Criar agendamento
+     */
     public function store(Request $request)
     {
         $authUser = Auth::user();
 
         $validator = Validator::make($request->all(), [
-            'client_id' => 'required|exists:clients,id',
-            'professional_id' => 'required|exists:professionals,id',
-            'service_id' => 'required|exists:services,id',
-            'start_at' => 'required|date_format:Y-m-d H:i',
-            'end_at' => 'required|date_format:Y-m-d H:i|after:start_at',
-            'source' => 'in:web,staff,whatsapp',
-            'notes' => 'nullable|string|max:500',
+            'client_id'        => 'required|exists:clients,id',
+            'professional_id'  => 'required|exists:professionals,id',
+            'service_id'       => 'required|exists:services,id',
+            'start_at'         => 'required|date_format:Y-m-d H:i',
+            'end_at'           => 'required|date_format:Y-m-d H:i|after:start_at',
+            'source'           => 'nullable|in:web,staff,whatsapp',
+            'notes'            => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $client = Client::find($request->client_id);
+        // Busca entidades
+        $client       = Client::find($request->client_id);
         $professional = Professional::find($request->professional_id);
-        $service = Service::find($request->service_id);
+        $service      = Service::find($request->service_id);
 
-        if ($client->tenant_id !== $authUser->tenant_id ||
+        // Proteção multi-tenant
+        if (
+            $client->tenant_id !== $authUser->tenant_id ||
             $professional->tenant_id !== $authUser->tenant_id ||
-            $service->tenant_id !== $authUser->tenant_id) {
+            $service->tenant_id !== $authUser->tenant_id
+        ) {
             return response()->json(['message' => 'IDs pertencem a outro tenant.'], 403);
         }
 
-        $conflict = Appointment::where('professional_id', $request->professional_id)
-            ->whereBetween('start_at', [$request->start_at, $request->end_at])
-            ->orWhereBetween('end_at', [$request->start_at, $request->end_at])
+        // Verifica conflito
+        $conflict = Appointment::where('professional_id', $professional->id)
+            ->where(function ($q) use ($request) {
+                $q->whereBetween('start_at', [$request->start_at, $request->end_at])
+                  ->orWhereBetween('end_at',   [$request->start_at, $request->end_at]);
+            })
             ->exists();
 
         if ($conflict) {
@@ -70,37 +82,44 @@ class AppointmentController extends Controller
 
         try {
             $appointment = Appointment::create([
-                'tenant_id' => $authUser->tenant_id,
-                'client_id' => $client->id,
-                'professional_id' => $professional->id,
-                'service_id' => $service->id,
-                'start_at' => $request->start_at,
-                'end_at' => $request->end_at,
-                'status' => 'pending',
-                'source' => $request->source ?? 'web',
-                'notes' => $request->notes,
+                'tenant_id'        => $authUser->tenant_id,
+                'client_id'        => $client->id,
+                'professional_id'  => $professional->id,
+                'service_id'       => $service->id,
+                'start_at'         => $request->start_at,
+                'end_at'           => $request->end_at,
+                'status'           => 'pending',
+                'source'           => $request->source ?? 'web',
+                'notes'            => $request->notes,
             ]);
 
             AppointmentLog::create([
-                'appointment_id' => $appointment->id,
-                'changed_by_user_id' => $authUser->id ?? null,
-                'from_status' => null,
-                'to_status' => 'pending',
-                'note' => 'Agendamento criado.'
+                'appointment_id'       => $appointment->id,
+                'changed_by_user_id'   => $authUser->id,
+                'from_status'          => null,
+                'to_status'            => 'pending',
+                'note'                 => 'Agendamento criado.'
             ]);
 
             DB::commit();
 
             return response()->json([
                 'message' => 'Agendamento criado com sucesso.',
-                'data' => $appointment->load(['client', 'professional.user', 'service'])
+                'data'    => $appointment->load(['client', 'professional.user', 'service'])
             ], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erro ao criar agendamento.', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Erro ao criar agendamento.',
+                'error'   => $e->getMessage()
+            ], 500);
         }
     }
 
+    /**
+     * Exibe agendamento
+     */
     public function show($id)
     {
         $user = Auth::user();
@@ -116,20 +135,23 @@ class AppointmentController extends Controller
         return response()->json($appointment);
     }
 
+    /**
+     * Atualiza agendamento
+     */
     public function update(Request $request, $id)
     {
-        $authUser = Auth::user();
-        $appointment = Appointment::where('tenant_id', $authUser->tenant_id)->find($id);
+        $authUser     = Auth::user();
+        $appointment  = Appointment::where('tenant_id', $authUser->tenant_id)->find($id);
 
         if (!$appointment) {
             return response()->json(['message' => 'Agendamento não encontrado.'], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'status' => 'in:pending,confirmed,done,cancelled,no_show',
-            'notes' => 'nullable|string|max:500',
-            'start_at' => 'sometimes|date_format:Y-m-d H:i',
-            'end_at' => 'sometimes|date_format:Y-m-d H:i|after:start_at',
+            'status'    => 'in:pending,confirmed,done,cancelled,no_show',
+            'notes'     => 'nullable|string|max:500',
+            'start_at'  => 'sometimes|date_format:Y-m-d H:i',
+            'end_at'    => 'sometimes|date_format:Y-m-d H:i|after:start_at',
         ]);
 
         if ($validator->fails()) {
@@ -140,31 +162,45 @@ class AppointmentController extends Controller
 
         try {
             $oldStatus = $appointment->status;
-            $appointment->update($request->only(['status', 'notes', 'start_at', 'end_at']));
+
+            $appointment->update($request->only([
+                'status',
+                'notes',
+                'start_at',
+                'end_at'
+            ]));
 
             AppointmentLog::create([
-                'appointment_id' => $appointment->id,
-                'changed_by_user_id' => $authUser->id,
-                'from_status' => $oldStatus,
-                'to_status' => $appointment->status,
-                'note' => 'Status alterado para ' . $appointment->status
+                'appointment_id'      => $appointment->id,
+                'changed_by_user_id'  => $authUser->id,
+                'from_status'         => $oldStatus,
+                'to_status'           => $appointment->status,
+                'note'                => 'Status alterado para ' . $appointment->status
             ]);
 
             DB::commit();
 
             return response()->json([
                 'message' => 'Agendamento atualizado com sucesso.',
-                'data' => $appointment->load(['client', 'professional.user', 'service'])
+                'data'    => $appointment->load(['client', 'professional.user', 'service'])
             ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Erro ao atualizar agendamento.', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Erro ao atualizar agendamento.',
+                'error'   => $e->getMessage()
+            ], 500);
         }
     }
 
+    /**
+     * Exclui agendamento
+     */
     public function destroy($id)
     {
         $authUser = Auth::user();
+
         $appointment = Appointment::where('tenant_id', $authUser->tenant_id)->find($id);
 
         if (!$appointment) {
@@ -173,30 +209,35 @@ class AppointmentController extends Controller
 
         DB::transaction(function () use ($appointment, $authUser) {
             AppointmentLog::create([
-                'appointment_id' => $appointment->id,
-                'changed_by_user_id' => $authUser->id,
-                'from_status' => $appointment->status,
-                'to_status' => 'cancelled',
-                'note' => 'Agendamento excluído.'
+                'appointment_id'      => $appointment->id,
+                'changed_by_user_id'  => $authUser->id,
+                'from_status'         => $appointment->status,
+                'to_status'           => 'cancelled',
+                'note'                => 'Agendamento excluído.'
             ]);
+
             $appointment->delete();
         });
 
         return response()->json(['message' => 'Agendamento excluído com sucesso.']);
     }
 
+    /**
+     * Slots disponíveis (mock ou personalizado)
+     */
     public function availableSlots(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'professional_id' => 'required|exists:professionals,id',
-            'date' => 'required|date_format:Y-m-d',
-            'service_id' => 'required|exists:services,id',
+            'date'            => 'required|date_format:Y-m-d',
+            'service_id'      => 'required|exists:services,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // Aqui você pode integrar com seu sistema de horários configurado
         return response()->json([
             'message' => 'Horários disponíveis para ' . $request->date,
             'slots' => [

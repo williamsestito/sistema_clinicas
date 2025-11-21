@@ -10,65 +10,79 @@ use App\Models\Client;
 class AuthClientController extends Controller
 {
     /**
-     * Login do cliente via Sanctum
+     * Login do cliente (API via Sanctum)
      */
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required|string',
         ]);
 
-        // Busca o cliente pelo e-mail
+        // Buscar cliente no banco
         $client = Client::where('email', $request->email)->first();
 
-        // Verifica senha e status
         if (!$client || !Hash::check($request->password, $client->password)) {
-            return response()->json(['message' => 'E-mail ou senha incorretos.'], 401);
+            return response()->json([
+                'success' => false,
+                'message' => 'E-mail ou senha incorretos.'
+            ], 401);
         }
 
         if (!$client->active) {
-            return response()->json(['message' => 'Conta inativa.'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Conta inativa. Entre em contato com o suporte.'
+            ], 403);
         }
 
-        // Gera token Sanctum
-        $token = $client->createToken('client_api_token')->plainTextToken;
+        // Zera tokens anteriores (opcional, porém recomendado)
+        $client->tokens()->where('name', 'client_api_token')->delete();
+
+        // Gerar token Sanctum
+        $token = $client->createToken(
+            'client_api_token',
+            ['client-access']
+        )->plainTextToken;
 
         return response()->json([
-            'message' => 'Login efetuado com sucesso.',
-            'type' => 'client',
-            'token' => $token,
-            'client' => [
-                'id' => $client->id,
-                'name' => $client->name,
-                'email' => $client->email,
-                'tenant_id' => $client->tenant_id,
-                'phone' => $client->phone,
-                'city' => $client->city,
-                'state' => $client->state,
-                'active' => $client->active,
-            ]
+            'success' => true,
+            'message' => 'Login realizado com sucesso.',
+            'type'    => 'client',
+            'token'   => $token,
+            'client'  => $client->only([
+                'id', 'tenant_id', 'name', 'email', 'phone', 'city', 'state', 'active'
+            ])
         ]);
     }
 
+
     /**
-     * Logout do cliente
+     * Logout (API)
      */
     public function logout(Request $request)
     {
         $user = $request->user();
-        if ($user) {
-            $user->tokens()->delete();
+
+        if ($user && $user->currentAccessToken()) {
+            $user->currentAccessToken()->delete();
         }
 
-        return response()->json(['message' => 'Logout efetuado com sucesso.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Logout efetuado com sucesso.'
+        ]);
     }
 
+
     /**
-     * Retorna o cliente autenticado
+     * Dados do cliente autenticado via Sanctum
      */
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json([
+            'success' => true,
+            'client'  => $request->user()
+        ]);
     }
 }

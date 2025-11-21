@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    /**
+     * Registro de usuário interno (API)
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -20,18 +23,21 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors()
+            ], 422);
         }
 
         $authUser = Auth::user();
 
+        // Se o registro é via admin ou owner
         if ($authUser) {
-            // 👥 Se for um admin logado, herda o tenant_id dele
             $tenantId = $authUser->tenant_id;
         } else {
-            // 🏢 Registro público: cria um novo tenant automaticamente
+            // Registro externo cria tenant automaticamente
             $tenant = Tenant::create([
-                'name' => $request->name . ' - Clínica',
+                'name'   => "{$request->name} - Clínica",
                 'active' => true,
             ]);
             $tenantId = $tenant->id;
@@ -42,16 +48,21 @@ class AuthController extends Controller
             'name'      => $request->name,
             'email'     => $request->email,
             'password'  => Hash::make($request->password),
-            'role'      => $authUser ? 'client' : 'owner',
+            'role'      => $authUser ? 'staff' : 'owner',
             'active'    => true,
         ]);
 
         return response()->json([
-            'message' => '✅ Usuário cadastrado com sucesso!',
-            'data' => $user->makeHidden('password'),
+            'success' => true,
+            'message' => 'Usuário criado com sucesso.',
+            'user'    => $user->makeHidden('password')
         ], 201);
     }
 
+
+    /**
+     * Login via API (usuários internos)
+     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -60,33 +71,59 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors()
+            ], 422);
         }
 
         if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => '❌ Credenciais inválidas.'], 401);
+            return response()->json([
+                'success' => false,
+                'message' => 'Credenciais inválidas.'
+            ], 401);
         }
 
         $user = Auth::user();
-        $token = $user->createToken('auth_token')->plainTextToken;
+
+        if (!$user->active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuário inativo.'
+            ], 403);
+        }
+
+        // Criação do token
+        $token = $user->createToken(
+            'api_token',
+            ['user-access']
+        )->plainTextToken;
 
         return response()->json([
-            'message' => '✅ Login efetuado com sucesso.',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
+            'success' => true,
+            'message' => 'Login realizado com sucesso.',
+            'token'   => $token,
+            'user'    => $user
         ]);
     }
 
+
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json([
+            'success' => true,
+            'user'    => $request->user()
+        ]);
     }
+
 
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
 
-        return response()->json(['message' => 'Logout realizado com sucesso.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Logout realizado com sucesso.'
+        ]);
     }
 }

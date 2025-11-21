@@ -9,13 +9,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
+
             $table->id();
 
             // Tenant (clínica)
             $table->unsignedBigInteger('tenant_id')->nullable();
 
-            // Função no sistema
-            $table->enum('role', ['owner', 'admin', 'professional', 'frontdesk', 'client'])->default('client');
+            /*
+            |--------------------------------------------------------------------------
+            | PERFIS DO SISTEMA (APENAS USES INTERNOS)
+            |
+            | ❌ 'client' removido para evitar conflito com tabela clients
+            |--------------------------------------------------------------------------
+            */
+            $table->enum('role', [
+                'owner',
+                'admin',
+                'professional',
+                'frontdesk'
+            ])->default('professional');
 
             // Dados pessoais
             $table->string('name', 120);
@@ -47,6 +59,9 @@ return new class extends Migration
             // Status e auditoria
             $table->boolean('active')->default(true);
             $table->timestamps();
+
+            // Indexes importantes
+            $table->index(['tenant_id', 'active']);
         });
     }
 

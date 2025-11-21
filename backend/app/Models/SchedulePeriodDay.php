@@ -24,12 +24,41 @@ class SchedulePeriodDay extends Model
         'available',
     ];
 
+    /**
+     * --------------------------------------------------------------------------
+     * CASTS — configurados corretamente
+     * --------------------------------------------------------------------------
+     *
+     * ✔ weekday → integer
+     * ✔ duration → integer
+     * ✔ available → boolean
+     *
+     * ⚠ IMPORTANTE:
+     *  Não usar "datetime:H:i" em colunas do tipo TIME.
+     *  Laravel não lida corretamente com isso — ele converte para 1970-01-01,
+     *  causando bugs de comparação e loops infinitos.
+     *
+     * Portanto, os campos TIME continuam strings puras ("HH:MM:SS") e só são
+     * convertidos manualmente em Carbon dentro dos controllers.
+     * --------------------------------------------------------------------------
+     */
     protected $casts = [
-        'weekday'     => 'integer',
-        'duration'    => 'integer',
-        'available'   => 'boolean',
+        'weekday'      => 'integer',
+        'duration'     => 'integer',
+        'available'    => 'boolean',
+
+        // TIME → string
+        'start_time'   => 'string',
+        'end_time'     => 'string',
+        'break_start'  => 'string',
+        'break_end'    => 'string',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | RELATIONSHIPS
+    |--------------------------------------------------------------------------
+    */
     public function period()
     {
         return $this->belongsTo(SchedulePeriod::class, 'period_id');
