@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Client;
 
 class AuthClientController extends Controller
 {
     /**
-     * Login do cliente (API via Sanctum)
+     * LOGIN DO CLIENTE VIA API (TOKEN SANCTUM)
+     * - Usado pelo aplicativo ou qualquer cliente externo
      */
     public function login(Request $request)
     {
@@ -19,7 +21,7 @@ class AuthClientController extends Controller
             'password' => 'required|string',
         ]);
 
-        // Buscar cliente no banco
+        // Buscar cliente
         $client = Client::where('email', $request->email)->first();
 
         if (!$client || !Hash::check($request->password, $client->password)) {
@@ -36,10 +38,17 @@ class AuthClientController extends Controller
             ], 403);
         }
 
-        // Zera tokens anteriores (opcional, porém recomendado)
+        /*
+        |--------------------------------------------------------------------------
+        | GERAR TOKEN DE API (PARA APP / MOBILE)
+        |--------------------------------------------------------------------------
+        | Quando o login é realizado pela API, o usuário recebe um token Sanctum.
+        |--------------------------------------------------------------------------
+        */
+
+        // Remove token antigo (boa prática)
         $client->tokens()->where('name', 'client_api_token')->delete();
 
-        // Gerar token Sanctum
         $token = $client->createToken(
             'client_api_token',
             ['client-access']
@@ -57,15 +66,17 @@ class AuthClientController extends Controller
     }
 
 
+
     /**
-     * Logout (API)
+     * LOGOUT DO CLIENTE (API)
+     * - Invalida apenas o token atual
      */
     public function logout(Request $request)
     {
-        $user = $request->user();
+        $client = $request->user();
 
-        if ($user && $user->currentAccessToken()) {
-            $user->currentAccessToken()->delete();
+        if ($client && $client->currentAccessToken()) {
+            $client->currentAccessToken()->delete();
         }
 
         return response()->json([
@@ -75,14 +86,26 @@ class AuthClientController extends Controller
     }
 
 
+
     /**
-     * Dados do cliente autenticado via Sanctum
+     * RETORNA OS DADOS DO CLIENTE AUTENTICADO
+     * - Funciona para client_api (token)
+     * - Pode funcionar também com sessão caso precise
      */
     public function me(Request $request)
     {
+        $client = $request->user('client_api') ?? $request->user('client');
+
+        if (!$client) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Não autenticado.'
+            ], 401);
+        }
+
         return response()->json([
             'success' => true,
-            'client'  => $request->user()
+            'client'  => $client
         ]);
     }
 }

@@ -36,24 +36,34 @@
                     </span>
                 </div>
 
+                {{-- DATA / HORÁRIO --}}
                 <p class="text-sm text-gray-600 mb-1">
                     <i class="fa-regular fa-clock"></i>
-                    {{ \Carbon\Carbon::parse($req->start_at)->format('d/m/Y H:i') }}
+                    {{ Carbon\Carbon::parse($req->start_at)->format('d/m/Y H:i') }}
                     –
-                    {{ \Carbon\Carbon::parse($req->end_at)->format('H:i') }}
+                    {{ Carbon\Carbon::parse($req->end_at)->format('H:i') }}
                 </p>
 
+                {{-- SERVIÇO / PROCEDIMENTO --}}
                 <p class="text-sm text-gray-600 flex items-center gap-1 mb-2">
                     <i class="fa-solid fa-stethoscope"></i>
-                    {{ $req->service->name }}
+
+                    @if($req->service)
+                        {{ $req->service->name }}
+                    @else
+                        {{-- Pré-agendamento → service_id = null --}}
+                        {{ $req->notes ? str_replace('Procedimento: ', '', $req->notes) : 'Consulta' }}
+                    @endif
                 </p>
 
+                {{-- OBSERVAÇÃO / NOTES --}}
                 @if($req->notes)
                     <p class="text-xs text-gray-500 italic border-l-2 pl-2 mt-2">
                         “{{ $req->notes }}”
                     </p>
                 @endif
 
+                {{-- BOTÕES --}}
                 <div class="mt-4 flex gap-2">
 
                     {{-- Aceitar --}}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Tenant;
+use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -11,6 +12,84 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    /**
+     * ------------------------------------------------------------------
+     * LOGIN WEB (FORM login.blade.php)
+     * ------------------------------------------------------------------
+     * - Usa o formulário único para TODOS os usuários.
+     * - Tenta primeiro logar como usuário interno (guard web).
+     * - Se não achar, tenta logar como cliente (guard client).
+     * - Redireciona para o painel adequado.
+     * ------------------------------------------------------------------
+     */
+    public function loginWeb(Request $request)
+    {
+        $credentials = $request->validate([
+            'email'    => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        $remember = $request->boolean('remember');
+
+        /*
+        |--------------------------------------------------------------------------
+        | 1) Tentativa: USUÁRIO INTERNO (admin/owner/staff/profissional)
+        |--------------------------------------------------------------------------
+        */
+        if (Auth::guard('web')->attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+
+            /** @var \App\Models\User $user */
+            $user = Auth::guard('web')->user();
+
+            // Se tiver campo "role", pode direcionar por tipo
+            switch ($user->role) {
+                case 'owner':
+                case 'admin':
+                    // ajuste este nome de rota conforme seu sistema
+                    return redirect()->intended(route('admin.dashboard'));
+                case 'staff':
+                case 'professional':
+                    // ajuste se tiver dashboard específico
+                    return redirect()->intended(route('staff.dashboard'));
+                default:
+                    // fallback genérico
+                    return redirect()->intended(route('home'));
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2) Tentativa: CLIENTE / PACIENTE (guard "client")
+        |--------------------------------------------------------------------------
+        | Aqui usamos o provider "clients" configurado em config/auth.php
+        | para autenticação via sessão (não é o guard de API).
+        |--------------------------------------------------------------------------
+        */
+        if (Auth::guard('client')->attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+
+            /** @var \App\Models\Client $client */
+            $client = Auth::guard('client')->user();
+
+            // Se quiser gerar token de API para usar depois, descomente:
+            // $token = $client->createToken('client_token')->plainTextToken;
+            // session(['client_api_token' => $token]);
+
+            // Rota padrão do painel do cliente
+            return redirect()->intended(route('client.schedule'));
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3) Falha nas duas tentativas
+        |--------------------------------------------------------------------------
+        */
+        return back()
+            ->withErrors(['email' => 'Credenciais inválidas.'])
+            ->onlyInput('email');
+    }
+
     /**
      * Registro de usuário interno (API)
      */
@@ -59,9 +138,9 @@ class AuthController extends Controller
         ], 201);
     }
 
-
     /**
      * Login via API (usuários internos)
+     * ⚠️ Mantido como está para não quebrar /api/auth/login
      */
     public function login(Request $request)
     {
@@ -107,7 +186,6 @@ class AuthController extends Controller
         ]);
     }
 
-
     public function me(Request $request)
     {
         return response()->json([
@@ -115,7 +193,6 @@ class AuthController extends Controller
             'user'    => $request->user()
         ]);
     }
-
 
     public function logout(Request $request)
     {

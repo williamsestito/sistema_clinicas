@@ -12,7 +12,7 @@ use App\Models\Client;
 class LoginController extends Controller
 {
     /**
-     * Tela única de login (para todos os tipos).
+     * Exibe a tela de login unificada.
      */
     public function showLoginForm()
     {
@@ -20,15 +20,13 @@ class LoginController extends Controller
     }
 
     /**
-     * Login unificado:
-     * - admin / owner / professional / frontdesk → guard:web (tabela users)
-     * - client (paciente)                       → guard:client (tabela clients)
+     * LOGIN UNIFICADO PARA:
+     * - Admin / Owner / Profissional / Atendente → guard:web
+     * - Cliente / Paciente → guard:client
      */
     public function login(Request $request)
     {
-        // ------------------------------------------------------------
-        // 1) Validação básica
-        // ------------------------------------------------------------
+        // 1) Validação
         $credentials = $request->validate([
             'email'    => ['required', 'email'],
             'password' => ['required', 'string'],
@@ -36,47 +34,50 @@ class LoginController extends Controller
 
         $remember = $request->boolean('remember');
 
-        // ------------------------------------------------------------
-        // 2) TENTA LOGIN COMO USUÁRIO INTERNO (users / guard:web)
-        // ------------------------------------------------------------
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2) LOGIN PARA USUÁRIOS INTERNOS (TABELA USERS)
+        |--------------------------------------------------------------------------
+        */
         $user = User::where('email', $credentials['email'])->first();
 
         if ($user) {
 
-            // Se usuário interno existe mas está inativo → mensagem específica
             if (!$user->active) {
-                return back()->withErrors([
-                    'email' => 'Sua conta de acesso interno está inativa. Contate o administrador.',
-                ])->onlyInput('email');
+                return back()
+                    ->withErrors(['email' => 'Sua conta está inativa.'])
+                    ->onlyInput('email');
             }
 
-            // Confere senha
             if (Hash::check($credentials['password'], $user->password)) {
 
                 Auth::guard('web')->login($user, $remember);
                 $request->session()->regenerate();
 
-                // Direcionamento baseado no papel (role)
                 return match ($user->role) {
                     'owner', 'admin' => redirect()->route('admin.dashboard'),
                     'professional'   => redirect()->route('professional.dashboard'),
                     'frontdesk'      => redirect()->route('professional.dashboard'),
-                    default          => redirect()->route('admin.agenda'),
+                    default          => redirect()->route('admin.dashboard'),
                 };
             }
         }
 
-        // ------------------------------------------------------------
-        // 3) TENTA LOGIN COMO CLIENTE / PACIENTE (clients / guard:client)
-        // ------------------------------------------------------------
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3) LOGIN PARA CLIENTE / PACIENTE (TABELA CLIENTS)
+        |--------------------------------------------------------------------------
+        */
         $client = Client::where('email', $credentials['email'])->first();
 
         if ($client) {
 
             if (!$client->active) {
-                return back()->withErrors([
-                    'email' => 'Sua conta de paciente está inativa. Entre em contato com a clínica.',
-                ])->onlyInput('email');
+                return back()
+                    ->withErrors(['email' => 'Sua conta de paciente está inativa.'])
+                    ->onlyInput('email');
             }
 
             if (Hash::check($credentials['password'], $client->password)) {
@@ -88,23 +89,29 @@ class LoginController extends Controller
             }
         }
 
-        // ------------------------------------------------------------
-        // 4) FALHOU PARA TODOS OS TIPOS
-        // ------------------------------------------------------------
-        return back()->withErrors([
-            'email' => 'E-mail ou senha incorretos.',
-        ])->onlyInput('email');
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4) ERRO PADRÃO
+        |--------------------------------------------------------------------------
+        */
+        return back()
+            ->withErrors(['email' => 'E-mail ou senha incorretos.'])
+            ->onlyInput('email');
     }
 
+
     /**
-     * Logout unificado para ambos os guards (web e client).
+     * Logout unificado (WEB + CLIENT)
      */
     public function logout(Request $request)
     {
-        foreach (['web', 'client'] as $guard) {
-            if (Auth::guard($guard)->check()) {
-                Auth::guard($guard)->logout();
-            }
+        if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+        }
+
+        if (Auth::guard('client')->check()) {
+            Auth::guard('client')->logout();
         }
 
         $request->session()->invalidate();

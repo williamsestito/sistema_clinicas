@@ -1,146 +1,134 @@
 <script>
 function agendamento(preset = {}) {
 
-  /* ===============================================================
-     ROTAS DO BACKEND
-     =============================================================== */
-  const routes = {
-    estados:        '{{ route('client.estados') }}',
-    cidades:        '{{ route('client.cidades') }}',
-    especialidades: '{{ route('client.especialidades') }}',
-    procedimentos:  '{{ route('client.procedimentos') }}',
-    profissionais:  '{{ route('client.profissionais') }}',
+  /* ============================================================
+     ROTAS API
+     ============================================================ */
+  const API_BASE = '/api/client';
 
-    horarios:       '{{ url('/client/horarios') }}',
-    preAgendar:     '{{ route('client.preagendar') }}',
+  const routes = {
+    estados:        `${API_BASE}/public/estados`,
+    cidades:        `${API_BASE}/public/cidades`,
+    especialidades: `${API_BASE}/public/especialidades`,
+    procedimentos:  `${API_BASE}/public/procedimentos`,
+    profissionais:  `${API_BASE}/public/profissionais`,
+    horarios:       `${API_BASE}/public/horarios`,
+    preAgendar:     `/client/appointments`   // ROTA WEB (auth:client)
   };
 
-  /* ===============================================================
-     CSRF TOKEN PARA POST
-     =============================================================== */
-  const csrfToken = document.head.querySelector('meta[name="csrf-token"]').content;
 
-  /* ===============================================================
-     TRATAMENTO SEGURO PARA JSON
-     =============================================================== */
+  /* ============================================================
+     SAFE JSON
+     ============================================================ */
   async function safeJson(response) {
+    if (response.status === 401) {
+      Swal.fire({
+        icon: "error",
+        title: "Sessão expirada",
+        text: "Faça login novamente."
+      }).then(() => window.location.href = "/login");
+      throw new Error("401");
+    }
+
     const text = await response.text();
 
-    // sessão expirada → Laravel devolve HTML da tela de login
-    if (text.startsWith('<!DOCTYPE') || text.includes('<html')) {
-      console.error("❌ HTML recebido — sessão expirada ou rota incorreta");
+    if (text.startsWith("<!DOCTYPE") || text.includes("<html")) {
       Swal.fire({
-        icon: 'error',
-        title: 'Sessão expirada',
-        text: 'Faça login novamente.'
-      }).then(() => window.location.href = "{{ route('login') }}");
-      throw new Error("Sessão expirada — HTML retornado");
+        icon: "error",
+        title: "Sessão expirada",
+        text: "Faça login novamente."
+      }).then(() => window.location.href = "/login");
+      throw new Error("HTML");
     }
 
     try {
       return JSON.parse(text);
-    } catch (e) {
-      console.error("❌ JSON inválido recebido do servidor:", text);
-      throw new Error("Resposta não é JSON");
+    } catch {
+      console.warn("JSON inválido:", text);
+      Swal.fire({
+        icon: "error",
+        title: "Erro inesperado",
+        text: "O servidor retornou dados inválidos."
+      });
+      throw new Error("Invalid JSON");
     }
   }
 
-  /* ===============================================================
+
+  /* ============================================================
      COMPONENTE ALPINE
-     =============================================================== */
+     ============================================================ */
   return {
 
-    /* ------------------------------
-       STATE
-       ------------------------------ */
     uf: '',
     cidade: '',
-    profissional: '',
     especialidade: '',
     procedimento: '',
+    profissional: '',
     dataSelecionada: '',
     horarioSelecionado: '',
 
     ufs: [],
     cidades: [],
-    profissionais: [],
     especialidades: [],
     procedimentos: [],
+    profissionais: [],
     horarios: [],
-
     profissionalSelecionado: null,
+
     minDate: '',
     clientName: preset.clientName,
     clientEmail: preset.clientEmail,
 
-    /* ===============================================================
+
+    /* ------------------------------------------------------------
        INIT
-       =============================================================== */
+       ------------------------------------------------------------ */
     init() {
       this.minDate = new Date().toISOString().slice(0, 10);
       this.dataSelecionada = this.minDate;
       this.loadUFs();
     },
 
-    /* ===============================================================
-       CARREGAMENTO DE LISTAS
-       =============================================================== */
 
+    /* ------------------------------------------------------------
+       FORMATAR DATA (usado no HTML)
+       ------------------------------------------------------------ */
+    formatarData(dt) {
+      if (!dt) return '-';
+      const d = new Date(dt);
+      return d.toLocaleDateString('pt-BR');
+    },
+
+
+    /* ------------------------------------------------------------
+       UF / CIDADE
+       ------------------------------------------------------------ */
     async loadUFs() {
-      const r = await fetch(routes.estados, { credentials: "include" });
+      const r = await fetch(routes.estados);
       this.ufs = await safeJson(r);
     },
 
-    async loadEspecialidades() {
-      const params = new URLSearchParams({ state: this.uf, city: this.cidade });
-      const r = await fetch(`${routes.especialidades}?${params}`, { credentials: "include" });
-      this.especialidades = await safeJson(r);
-    },
-
-    async loadProcedimentos() {
-      const params = new URLSearchParams({ state: this.uf, city: this.cidade });
-      if (this.especialidade) params.append('specialty', this.especialidade);
-
-      const r = await fetch(`${routes.procedimentos}?${params}`, { credentials: "include" });
-      this.procedimentos = await safeJson(r);
-    },
-
-    async loadProfissionais() {
-      const params = new URLSearchParams({
-        state: this.uf,
-        city: this.cidade
-      });
-      if (this.especialidade) params.append('specialty', this.especialidade);
-      if (this.procedimento) params.append('procedure', this.procedimento);
-
-      const r = await fetch(`${routes.profissionais}?${params}`, { credentials: "include" });
-      this.profissionais = await safeJson(r);
-
-      this.profissionalSelecionado =
-        this.profissionais.find(p => p.id == this.profissional) || null;
-    },
-
-    /* ===============================================================
-       EVENTOS DE TROCA DE FILTROS
-       =============================================================== */
-
     async changeUf() {
-      this.cidade = '';
-      this.cidades = [];
       this.resetFilters();
-
       if (!this.uf) return;
 
-      const r = await fetch(`${routes.cidades}?state=${this.uf}`, { credentials: "include" });
+      const r = await fetch(`${routes.cidades}?state=${this.uf}`);
       this.cidades = await safeJson(r);
     },
 
     async changeCidade() {
       this.resetFilters();
+
       await this.loadEspecialidades();
       await this.loadProcedimentos();
       await this.loadProfissionais();
     },
+
+
+    /* ------------------------------------------------------------
+       FILTROS PRINCIPAIS (Funções chamadas no HTML!)
+       ------------------------------------------------------------ */
 
     async changeEspecialidade() {
       await this.loadProcedimentos();
@@ -151,84 +139,85 @@ function agendamento(preset = {}) {
       await this.loadProfissionais();
     },
 
-    changeProfissional() {
-      this.profissional = parseInt(this.profissional);
+    async changeProfissional() {
       this.profissionalSelecionado =
         this.profissionais.find(p => p.id == this.profissional) || null;
-
-      this.horarios = [];
     },
 
-    resetFilters() {
-      this.profissional = '';
-      this.especialidade = '';
-      this.procedimento = '';
 
-      this.profissionais = [];
-      this.especialidades = [];
-      this.procedimentos = [];
-      this.horarios = [];
-
-      this.horarioSelecionado = '';
+    /* ------------------------------------------------------------
+       LOADS REAIS
+       ------------------------------------------------------------ */
+    async loadEspecialidades() {
+      const r = await fetch(
+        `${routes.especialidades}?state=${this.uf}&city=${this.cidade}`
+      );
+      this.especialidades = await safeJson(r);
     },
 
-    /* ===============================================================
-       FORMATAÇÃO
-       =============================================================== */
-
-    formatarData(data) {
-      const [y, m, d] = data.split('-');
-      return `${d}/${m}/${y}`;
+    async loadProcedimentos() {
+      let url = `${routes.procedimentos}?state=${this.uf}&city=${this.cidade}`;
+      if (this.especialidade) url += `&specialty=${this.especialidade}`;
+      const r = await fetch(url);
+      this.procedimentos = await safeJson(r);
     },
 
-    /* ===============================================================
-       🔥 BUSCAR HORÁRIOS
-       =============================================================== */
+    async loadProfissionais() {
+      let url = `${routes.profissionais}?state=${this.uf}&city=${this.cidade}`;
 
+      if (this.especialidade) url += `&specialty=${this.especialidade}`;
+      if (this.procedimento)  url += `&procedure=${this.procedimento}`;
+
+      const r = await fetch(url);
+      this.profissionais = await safeJson(r);
+
+      this.profissionalSelecionado =
+        this.profissionais.find(p => p.id == this.profissional) || null;
+    },
+
+
+    /* ------------------------------------------------------------
+       HORÁRIOS
+       ------------------------------------------------------------ */
     async carregarHorarios() {
 
       if (!this.profissional || !this.procedimento || !this.dataSelecionada) {
         Swal.fire({
-          icon: 'warning',
-          title: 'Campos obrigatórios',
-          text: 'Selecione profissional, procedimento e data.'
+          icon: "warning",
+          title: "Campos obrigatórios",
+          text: "Selecione profissional, procedimento e data."
         });
         return;
       }
 
-      const url = `${routes.horarios}/${this.profissional}?date=${this.dataSelecionada}`;
-      console.log("🔎 URL:", url);
+      const r = await fetch(
+        `${routes.horarios}/${this.profissional}?date=${this.dataSelecionada}`
+      );
 
-      const r = await fetch(url, { credentials: "include" });
       const data = await safeJson(r);
-
-      console.log("📥 Backend retornou:", data);
 
       if (!data.success) {
         Swal.fire({
-          icon: 'warning',
-          title: 'Indisponível',
+          icon: "warning",
+          title: "Indisponível",
           text: data.message
         });
         this.horarios = [];
         return;
       }
 
-      if (data.date && data.date !== this.dataSelecionada) {
-        this.dataSelecionada = data.date; // backend ajusta p/ próxima data útil
-      }
-
       this.horarios = data.slots;
     },
+
 
     selecionarHorario(h) {
       this.horarioSelecionado = h;
     },
 
-    /* ===============================================================
-       CONFIRMAÇÃO
-       =============================================================== */
 
+    /* ------------------------------------------------------------
+       CONFIRMAR AGENDAMENTO (SESSÃO WEB)
+       ------------------------------------------------------------ */
     async confirmarAgendamento() {
 
       if (!this.profissional || !this.procedimento || !this.dataSelecionada || !this.horarioSelecionado) {
@@ -242,18 +231,17 @@ function agendamento(preset = {}) {
 
       const payload = {
         professional_id: this.profissional,
-        procedure: this.procedimento,
-        date: this.dataSelecionada,
-        time: this.horarioSelecionado,
-        client_name: this.clientName,
-        client_email: this.clientEmail,
+        procedure:       this.procedimento,
+        date:            this.dataSelecionada,
+        time:            this.horarioSelecionado,
       };
 
       const res = await fetch(routes.preAgendar, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
         credentials: 'include',
         body: JSON.stringify(payload)
@@ -262,21 +250,38 @@ function agendamento(preset = {}) {
       const data = await safeJson(res);
 
       if (!data.success) {
-        return Swal.fire({
-          icon: 'error',
-          title: 'Erro',
+        Swal.fire({
+          icon: "error",
+          title: "Erro",
           text: data.message
         });
+        return;
       }
 
       Swal.fire({
-        icon: 'success',
-        title: 'Pré-agendamento enviado!',
-        text: 'Aguarde a confirmação por e-mail.'
+        icon: "success",
+        title: "Pré-agendamento enviado!",
+        text: "Aguarde a confirmação por e-mail."
       });
 
       this.horarios = [];
       this.horarioSelecionado = '';
+    },
+
+
+    /* ------------------------------------------------------------
+       RESET
+       ------------------------------------------------------------ */
+    resetFilters() {
+      this.profissional = '';
+      this.especialidade = '';
+      this.procedimento  = '';
+      this.profissionais = [];
+      this.especialidades = [];
+      this.procedimentos = [];
+      this.horarios = [];
+      this.horarioSelecionado = '';
+      this.profissionalSelecionado = null;
     }
   };
 }

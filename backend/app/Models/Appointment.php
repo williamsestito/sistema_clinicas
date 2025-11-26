@@ -13,7 +13,7 @@ class Appointment extends Model
         'tenant_id',
         'client_id',
         'professional_id',
-        'service_id',
+        'service_id', 
         'start_at',
         'end_at',
         'status',
@@ -23,34 +23,30 @@ class Appointment extends Model
 
     protected $casts = [
         'start_at' => 'datetime',
-        'end_at' => 'datetime',
+        'end_at'   => 'datetime',
     ];
 
-    // Relacionamento com tenant
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);
     }
 
-    // Relacionamento com cliente (tabela users)
     public function client()
     {
         return $this->belongsTo(User::class, 'client_id');
     }
 
-    // Relacionamento com profissional
     public function professional()
     {
         return $this->belongsTo(Professional::class, 'professional_id');
     }
 
-    // Relacionamento com serviço
+    // 🔥 Agora explicitamente nullable
     public function service()
     {
-        return $this->belongsTo(Service::class, 'service_id');
+        return $this->belongsTo(Service::class, 'service_id')->withDefault();
     }
 
-    // Relacionamento com logs do agendamento
     public function logs()
     {
         return $this->hasMany(AppointmentLog::class);

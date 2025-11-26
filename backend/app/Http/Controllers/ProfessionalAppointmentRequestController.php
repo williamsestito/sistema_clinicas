@@ -13,7 +13,6 @@ class ProfessionalAppointmentRequestController extends Controller
         $user = Auth::user();
         $professional = $user->professional;
 
-        // Pega apenas agendamentos pendentes
         $requests = Appointment::with(['client', 'service'])
             ->where('professional_id', $professional->id)
             ->where('status', 'pending')

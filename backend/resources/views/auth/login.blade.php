@@ -4,12 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Clínica Fácil</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/favicon/apple-touch-icon.png') }}">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/favicon/apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/favicon/favicon-32x32.png') }}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/favicon/favicon-16x16.png') }}">
   <link rel="manifest" href="{{ asset('assets/favicon/site.webmanifest') }}">
   <link rel="shortcut icon" href="{{ asset('assets/favicon/favicon.ico') }}" type="image/x-icon">
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
     body {
       background-image: url('{{ asset('assets/images/back_login.png') }}');
@@ -25,15 +28,15 @@
 
   <div class="bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200">
     
-    {{-- Logo --}}
+    <!-- Logo -->
     <div class="flex justify-center mb-6">
       <img src="{{ asset('assets/images/logoSys.png') }}" alt="Logo Clínica Fácil" class="w-52">
     </div>
 
-    {{-- Título --}}
+    <!-- Título -->
     <h2 class="text-center text-2xl font-bold text-gray-700 mb-6">Acesso ao Sistema</h2>
 
-    {{-- Mensagem de sucesso (logout ou ações) --}}
+    <!-- Mensagem de status -->
     @if (session('status'))
       <div class="bg-green-100 text-green-700 border border-green-400 rounded-md p-3 mb-4 text-sm flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -43,7 +46,7 @@
       </div>
     @endif
 
-    {{-- Mensagens de erro (validação ou autenticação) --}}
+    <!-- Mensagem de erro -->
     @if ($errors->any())
       <div class="bg-red-100 text-red-700 border border-red-400 rounded-md p-3 mb-4 text-sm flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -53,7 +56,7 @@
       </div>
     @endif
 
-    {{-- Formulário de login --}}
+    <!-- Formulário de login -->
     <form method="POST" action="{{ route('login.post') }}">
       @csrf
 
@@ -76,7 +79,6 @@
           class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 placeholder-gray-500">
       </div>
 
-      {{-- Lembrar-me e Esqueci senha --}}
       <div class="flex items-center justify-between mb-6">
         <label class="flex items-center text-gray-600 text-sm">
           <input type="checkbox" name="remember" class="mr-2 rounded border-gray-300">
@@ -87,21 +89,19 @@
         </a>
       </div>
 
-      {{-- Botão Entrar --}}
       <button type="submit"
               class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition">
         Entrar
       </button>
     </form>
 
-    {{-- Divisor --}}
+    <!-- Divisor -->
     <div class="flex items-center my-6">
       <div class="flex-grow border-t border-gray-300"></div>
       <span class="mx-2 text-gray-500 text-sm">ou</span>
       <div class="flex-grow border-t border-gray-300"></div>
     </div>
 
-    {{-- Cadastro --}}
     <div class="text-center">
       <p class="text-gray-600 text-sm mb-2">É a primeira vez por aqui?</p>
       <a href="{{ route('register') }}" 
