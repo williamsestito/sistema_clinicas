@@ -18,6 +18,8 @@ class Appointment extends Model
         'end_at',
         'status',
         'source',
+        'payment_status',
+        'color',
         'notes',
     ];
 

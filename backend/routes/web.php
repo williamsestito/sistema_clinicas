@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\{
 
 // Admin Controllers
 use App\Http\Controllers\Admin\{
+    AdminAgendaController,
     AdminPatientController,
     AdminProfessionalController,
     AdminServiceController
@@ -73,7 +74,12 @@ Route::middleware(['auth:web'])->group(function () {
     */
     Route::prefix('admin')->name('admin.')->middleware('role:admin,owner')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        Route::view('/agenda',    'admin.agenda')->name('agenda');
+        Route::get('/agenda',              [AdminAgendaController::class, 'index'])->name('agenda');
+        Route::get('/agenda/events',        [AdminAgendaController::class, 'events'])->name('agenda.events');
+        Route::get('/agenda/blocked-dates', [AdminAgendaController::class, 'blockedDates'])->name('agenda.blocked-dates');
+        Route::post('/agenda',              [AdminAgendaController::class, 'store'])->name('agenda.store');
+        Route::put('/agenda/{id}',          [AdminAgendaController::class, 'update'])->name('agenda.update');
+        Route::delete('/agenda/{id}',       [AdminAgendaController::class, 'destroy'])->name('agenda.destroy');
 
         // Cadastros — Pacientes
         Route::prefix('patients')->name('patients.')->group(function () {
