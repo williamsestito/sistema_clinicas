@@ -205,6 +205,15 @@
                                 :is-open="'sidebarOpen'" />
             </ul>
 
+            {{-- Link externo para o site --}}
+            <div class="border-t border-gray-700 mt-4 pt-3 px-4">
+                <a href="http://localhost:5174" target="_blank" rel="noopener"
+                   class="flex items-center gap-3 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-md px-3 py-2 transition-colors">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-sm"></i>
+                    <span x-show="sidebarOpen" class="text-[13px]">Ver Site</span>
+                </a>
+            </div>
+
         @endif
 
     </nav>

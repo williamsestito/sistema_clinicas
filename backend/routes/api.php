@@ -8,6 +8,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\TestimonialController;
+use App\Http\Controllers\SiteSettingController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\SchedulePeriodController;
 
 /*
@@ -90,4 +93,7 @@ Route::prefix('public')->group(function () {
     Route::get('{tenantId}/banners', [BannerController::class, 'publicBanners']);
     Route::get('{tenantId}/sections', [SectionController::class, 'publicSections']);
     Route::get('{tenantId}/testimonials', [TestimonialController::class, 'publicTestimonials']);
+    Route::get('{tenantId}/settings', [SiteSettingController::class, 'publicShow']);
+    Route::get('{tenantId}/services', [ServiceController::class, 'publicServices']);
+    Route::get('{tenantId}/professionals', [ProfessionalController::class, 'publicProfessionals']);
 });

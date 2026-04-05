@@ -22,7 +22,7 @@
       <!-- right: actions (WhatsApp) -->
       <!-- adicionada margem à esquerda para afastar do item "Entrar" -->
       <div class="hidden md:flex items-center gap-4 flex-shrink-0 ml-6">
-        <a href="https://wa.me/5547999999999" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-full">
+        <a :href="whatsappUrl" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-full">
           <Phone class="h-4 w-4 text-white" />
           <span class="hidden sm:inline">WhatsApp</span>
         </a>
@@ -56,10 +56,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Phone } from 'lucide-vue-next'
+import { fetchSettings } from '@/services/publicApi'
 
 const toggleMobile = ref(false)
+const whatsappUrl = ref('https://wa.me/5547999999999')
+
+onMounted(async () => {
+  const settings = await fetchSettings()
+  if (settings?.whatsapp_url) {
+    whatsappUrl.value = settings.whatsapp_url
+  }
+})
 
 function scrollToSection(id: string) {
   toggleMobile.value = false

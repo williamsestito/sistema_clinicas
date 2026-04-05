@@ -13,6 +13,8 @@ class SiteSetting extends Model
 {
     use HasFactory;
 
+    const CREATED_AT = null;
+
     /**
      * Campos preenchíveis em massa.
      */

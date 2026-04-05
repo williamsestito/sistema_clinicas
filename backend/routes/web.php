@@ -13,9 +13,13 @@ use App\Http\Controllers\Auth\{
 // Admin Controllers
 use App\Http\Controllers\Admin\{
     AdminAgendaController,
+    AdminBannerController,
     AdminPatientController,
     AdminProfessionalController,
-    AdminServiceController
+    AdminSectionController,
+    AdminServiceController,
+    AdminSettingsController,
+    AdminTestimonialController
 };
 
 // Sistema Controllers
@@ -111,13 +115,39 @@ Route::middleware(['auth:web'])->group(function () {
             Route::delete('/{id}',     [AdminServiceController::class, 'destroy'])->name('destroy');
         });
 
-        // CMS (placeholders — serão implementados na Fase 3)
-        Route::view('/banners',       'admin.banners.index')->name('banners.index');
-        Route::view('/sections',      'admin.sections.index')->name('sections.index');
-        Route::view('/testimonials',  'admin.testimonials.index')->name('testimonials.index');
+        // CMS — Banners
+        Route::prefix('banners')->name('banners.')->group(function () {
+            Route::get('/',            [AdminBannerController::class, 'index'])->name('index');
+            Route::get('/create',      [AdminBannerController::class, 'create'])->name('create');
+            Route::post('/',           [AdminBannerController::class, 'store'])->name('store');
+            Route::get('/{id}/edit',   [AdminBannerController::class, 'edit'])->name('edit');
+            Route::put('/{id}',        [AdminBannerController::class, 'update'])->name('update');
+            Route::delete('/{id}',     [AdminBannerController::class, 'destroy'])->name('destroy');
+        });
+
+        // CMS — Seções
+        Route::prefix('sections')->name('sections.')->group(function () {
+            Route::get('/',            [AdminSectionController::class, 'index'])->name('index');
+            Route::get('/create',      [AdminSectionController::class, 'create'])->name('create');
+            Route::post('/',           [AdminSectionController::class, 'store'])->name('store');
+            Route::get('/{id}/edit',   [AdminSectionController::class, 'edit'])->name('edit');
+            Route::put('/{id}',        [AdminSectionController::class, 'update'])->name('update');
+            Route::delete('/{id}',     [AdminSectionController::class, 'destroy'])->name('destroy');
+        });
+
+        // CMS — Depoimentos
+        Route::prefix('testimonials')->name('testimonials.')->group(function () {
+            Route::get('/',            [AdminTestimonialController::class, 'index'])->name('index');
+            Route::get('/create',      [AdminTestimonialController::class, 'create'])->name('create');
+            Route::post('/',           [AdminTestimonialController::class, 'store'])->name('store');
+            Route::get('/{id}/edit',   [AdminTestimonialController::class, 'edit'])->name('edit');
+            Route::put('/{id}',        [AdminTestimonialController::class, 'update'])->name('update');
+            Route::delete('/{id}',     [AdminTestimonialController::class, 'destroy'])->name('destroy');
+        });
 
         // Configurações
-        Route::view('/settings',      'admin.settings')->name('settings');
+        Route::get('/settings',  [AdminSettingsController::class, 'index'])->name('settings');
+        Route::put('/settings',  [AdminSettingsController::class, 'update'])->name('settings.update');
     });
 
 

@@ -169,4 +169,14 @@ class ServiceController extends Controller
 
         return response()->json(['message' => 'Serviço excluído com sucesso.']);
     }
+
+    public function publicServices(int $tenantId)
+    {
+        $services = Service::where('tenant_id', $tenantId)
+            ->where('active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'description', 'duration_min', 'price']);
+
+        return response()->json($services, 200);
+    }
 }

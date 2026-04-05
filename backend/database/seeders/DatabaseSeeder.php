@@ -270,5 +270,8 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->command->info('Seeder executado com sucesso!');
+
+        // Seções do site, configurações e depoimentos
+        $this->call(SectionSeeder::class);
     }
 }

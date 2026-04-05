@@ -34,7 +34,8 @@
               aria-label="Depoimento"
             >
               <div class="flex items-center gap-1 mb-4" aria-hidden="true">
-                <span v-for="n in 5" :key="n" class="text-emerald-500 text-[16px] leading-none">★</span>
+                <span v-for="n in (t.rating || 5)" :key="n" class="text-emerald-500 text-[16px] leading-none">★</span>
+                <span v-for="n in (5 - (t.rating || 5))" :key="'e'+n" class="text-gray-300 text-[16px] leading-none">★</span>
               </div>
 
               <p class="text-emerald-700 text-sm italic leading-relaxed min-h-[120px]">“{{ t.quote }}”</p>
@@ -69,35 +70,35 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import type { SiteTestimonial } from '@/services/publicApi'
 
-type Testimonial = {
+type DisplayTestimonial = {
   quote: string
   author: string
+  rating: number
 }
 
-const testimonials: Testimonial[] = [
-  {
-    quote:
-      'Atendimento excepcional! A Duda é extremamente profissional e atenciosa. Meus pés nunca estiveram tão bem cuidados.',
-    author: 'Maria Silva'
-  },
-  {
-    quote:
-      'Ambiente acolhedor e serviços de primeira qualidade. Recomendo a todos que buscam cuidados especializados.',
-    author: 'João Santos'
-  },
-  {
-    quote:
-      'A limpeza de pele foi maravilhosa! Profissionais competentes e produtos de excelente qualidade.',
-    author: 'Ana Paula'
-  },
-  {
-    quote:
-      'Tratamento podológico impecável. Senti alívio imediato após a primeira sessão. Equipe nota 10!',
-    author: 'Carlos Mendes'
-  }
-  // ... adicione mais depoimentos aqui
+const props = defineProps<{
+  testimonials?: SiteTestimonial[]
+}>()
+
+const fallbackTestimonials: DisplayTestimonial[] = [
+  { quote: 'Atendimento excepcional! A Duda é extremamente profissional e atenciosa. Meus pés nunca estiveram tão bem cuidados.', author: 'Maria Silva', rating: 5 },
+  { quote: 'Ambiente acolhedor e serviços de primeira qualidade. Recomendo a todos que buscam cuidados especializados.', author: 'João Santos', rating: 5 },
+  { quote: 'A limpeza de pele foi maravilhosa! Profissionais competentes e produtos de excelente qualidade.', author: 'Ana Paula', rating: 5 },
+  { quote: 'Tratamento podológico impecável. Senti alívio imediato após a primeira sessão. Equipe nota 10!', author: 'Carlos Mendes', rating: 5 },
 ]
+
+const testimonials = computed<DisplayTestimonial[]>(() => {
+  if (props.testimonials && props.testimonials.length > 0) {
+    return props.testimonials.map(t => ({
+      quote: t.comment,
+      author: t.client_name,
+      rating: t.rating,
+    }))
+  }
+  return fallbackTestimonials
+})
 
 // refs
 const viewportRef = ref<HTMLElement | null>(null)

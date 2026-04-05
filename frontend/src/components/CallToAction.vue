@@ -6,9 +6,8 @@
           <Calendar class="w-6 h-6" />
         </div>
 
-        <h3 class="text-3xl md:text-4xl font-serif font-bold text-emerald-900">Pronta para se cuidar?</h3>
-        <p class="text-sm text-emerald-700 max-w-2xl">
-          Agende seu horário online com nossos profissionais e dê o primeiro passo rumo ao seu bem‑estar.
+        <h3 class="text-3xl md:text-4xl font-serif font-bold text-emerald-900">{{ ctaTitle }}</h3>
+        <p class="text-sm text-emerald-700 max-w-2xl" v-html="ctaContent">
         </p>
 
         <a
@@ -29,7 +28,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Calendar } from 'lucide-vue-next'
+import type { SiteSection } from '@/services/publicApi'
+
+const props = defineProps<{
+  section?: SiteSection
+}>()
+
+const ctaTitle = computed(() => props.section?.title || 'Pronta para se cuidar?')
+const ctaContent = computed(() => props.section?.content || 'Agende seu horário online com nossos profissionais e dê o primeiro passo rumo ao seu bem‑estar.')
 </script>
 
 <style scoped>

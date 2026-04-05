@@ -179,4 +179,14 @@ class ProfessionalController extends Controller
 
         return response()->json(['message' => 'Profissional excluído com sucesso.']);
     }
+
+    public function publicProfessionals(int $tenantId)
+    {
+        $professionals = Professional::with('user:id,name')
+            ->where('tenant_id', $tenantId)
+            ->where('active', true)
+            ->get(['id', 'user_id', 'specialty', 'bio', 'photo_url']);
+
+        return response()->json($professionals, 200);
+    }
 }

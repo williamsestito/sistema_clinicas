@@ -11,14 +11,11 @@
       <div class="flex items-start">
         <!-- conteúdo principal -->
         <div class="w-full lg:w-full pt-16 md:pt-24">
-          <h1 class="font-serif text-4xl md:text-6xl lg:text-7xl text-white leading-tight drop-shadow-sm">
-            Beleza e bem-estar<br />
-            começam pelos seus<br />
-            pés.
+          <h1 class="font-serif text-4xl md:text-6xl lg:text-7xl text-white leading-tight drop-shadow-sm"
+              v-html="title">
           </h1>
 
-          <p class="mt-6 text-emerald-100/90 text-sm md:text-base max-w-xl">
-            Cuidado, saúde e estética em um só lugar.
+          <p class="mt-6 text-emerald-100/90 text-sm md:text-base max-w-xl" v-html="subtitle">
           </p>
 
           <div class="mt-8">
@@ -49,20 +46,21 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useHead } from '@vueuse/head' // opcional, remova se não usar
 import { Mouse, ChevronDown } from 'lucide-vue-next'
+import type { SiteSection } from '@/services/publicApi'
 
-// aceita prop com URL da imagem (facilita trocar depois)
-const props = defineProps({
-  image: {
-    type: String,
-    default: '/hero.jpg' // substitua pelo caminho da imagem que você for colocar
-  }
-})
+const props = defineProps<{
+  section?: SiteSection
+  image?: string
+}>()
+
+const title = computed(() => props.section?.title || 'Beleza e bem-estar começam pelos seus pés.')
+const subtitle = computed(() => props.section?.content || 'Cuidado, saúde e estética em um só lugar.')
 
 const heroStyle = computed(() => {
+  const img = props.section?.image_url || props.image || '/hero.jpg'
   return {
-    backgroundImage: `url('${props.image}')`,
+    backgroundImage: `url('${img}')`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat'
