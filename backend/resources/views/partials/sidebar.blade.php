@@ -246,6 +246,33 @@
 
             <h3 x-show="sidebarOpen"
                 class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
+                WhatsApp
+            </h3>
+
+            <ul class="space-y-0.5">
+                <x-sidebar-link icon="fa-brands fa-whatsapp"
+                                label="Dashboard"
+                                route="admin.whatsapp.dashboard"
+                                :is-open="'sidebarOpen'" />
+
+                <x-sidebar-link icon="fa-envelope"
+                                label="Mensagens"
+                                route="admin.whatsapp.messages"
+                                :is-open="'sidebarOpen'" />
+
+                <x-sidebar-link icon="fa-bullhorn"
+                                label="Campanhas"
+                                route="admin.whatsapp.campaigns"
+                                :is-open="'sidebarOpen'" />
+
+                <x-sidebar-link icon="fa-gear"
+                                label="Configurações"
+                                route="admin.whatsapp.settings"
+                                :is-open="'sidebarOpen'" />
+            </ul>
+
+            <h3 x-show="sidebarOpen"
+                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
                 Logs
             </h3>
 

@@ -24,7 +24,8 @@ use App\Http\Controllers\Admin\{
     AdminSectionController,
     AdminServiceController,
     AdminSettingsController,
-    AdminTestimonialController
+    AdminTestimonialController,
+    AdminWhatsAppController
 };
 
 // Sistema Controllers
@@ -185,6 +186,22 @@ Route::middleware(['auth:web'])->group(function () {
         Route::prefix('logs')->name('logs.')->group(function () {
             Route::get('/appointments',  [AdminLogController::class, 'appointments'])->name('appointments');
             Route::get('/notifications', [AdminLogController::class, 'notifications'])->name('notifications');
+        });
+
+        // WhatsApp
+        Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
+            Route::get('/',              [AdminWhatsAppController::class, 'dashboard'])->name('dashboard');
+            Route::get('/messages',      [AdminWhatsAppController::class, 'messages'])->name('messages');
+            Route::post('/send',         [AdminWhatsAppController::class, 'sendManual'])->name('send');
+            Route::get('/campaigns',     [AdminWhatsAppController::class, 'campaigns'])->name('campaigns');
+            Route::get('/campaigns/create', [AdminWhatsAppController::class, 'createCampaign'])->name('campaigns.create');
+            Route::post('/campaigns',    [AdminWhatsAppController::class, 'storeCampaign'])->name('campaigns.store');
+            Route::post('/campaigns/{campaign}/launch', [AdminWhatsAppController::class, 'launchCampaign'])->name('campaigns.launch');
+            Route::post('/campaigns/{campaign}/cancel', [AdminWhatsAppController::class, 'cancelCampaign'])->name('campaigns.cancel');
+            Route::delete('/campaigns/{campaign}', [AdminWhatsAppController::class, 'destroyCampaign'])->name('campaigns.destroy');
+            Route::get('/settings',      [AdminWhatsAppController::class, 'settings'])->name('settings');
+            Route::post('/connection',   [AdminWhatsAppController::class, 'updateConnection'])->name('connection.update');
+            Route::post('/automation',   [AdminWhatsAppController::class, 'updateAutomation'])->name('automation.update');
         });
     });
 

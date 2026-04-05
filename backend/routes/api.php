@@ -12,6 +12,7 @@ use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\SchedulePeriodController;
+use App\Http\Controllers\Api\WhatsAppWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -97,3 +98,11 @@ Route::prefix('public')->group(function () {
     Route::get('{tenantId}/services', [ServiceController::class, 'publicServices']);
     Route::get('{tenantId}/professionals', [ProfessionalController::class, 'publicProfessionals']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| WhatsApp Webhook (sem CSRF, sem auth)
+|--------------------------------------------------------------------------
+*/
+Route::get('whatsapp/webhook',  [WhatsAppWebhookController::class, 'verify']);
+Route::post('whatsapp/webhook', [WhatsAppWebhookController::class, 'handle']);

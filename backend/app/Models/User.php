@@ -74,6 +74,12 @@ class User extends Authenticatable
         return $this->hasMany(Appointment::class, 'client_id', 'id');
     }
 
+    // Alias para segmentação de campanhas WhatsApp
+    public function clientAppointments()
+    {
+        return $this->hasMany(Appointment::class, 'client_id', 'id');
+    }
+
     // Logs de alterações em agendamentos realizados por este usuário
     public function appointmentLogs()
     {
