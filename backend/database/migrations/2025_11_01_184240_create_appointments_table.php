@@ -9,7 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('appointments', function (Blueprint $table) {
+
             $table->id();
+
             $table->unsignedBigInteger('tenant_id');
             $table->unsignedBigInteger('client_id');        // usuário com role=client
             $table->unsignedBigInteger('professional_id');  // usuário com role=professional
@@ -28,18 +30,28 @@ return new class extends Migration
                 'no_show'
             ])->default('pending');
 
-            // 🔥 Agora aceitando “api”
+            /**
+             * 🔥 Agora aceitando origem "api"
+             */
             $table->enum('source', [
                 'web',
                 'staff',
                 'whatsapp',
-                'api'            // <--- ADICIONADO
+                'api'
             ])->default('api');
 
-            $table->text('notes')->nullable();
+            /**
+             * Detalhes adicionais
+             */
+            $table->text('notes')->nullable();              // Observações do agendamento
+            $table->string('cancel_reason')->nullable();    // Motivo do cancelamento
+            $table->string('reschedule_reason')->nullable();// Motivo do reagendamento (profissional ou cliente)
+
             $table->timestamps();
 
-            // Foreign Keys
+            /**
+             * Foreign Keys
+             */
             $table->foreign('tenant_id')
                 ->references('id')->on('tenants')
                 ->cascadeOnDelete();
@@ -52,12 +64,14 @@ return new class extends Migration
                 ->references('id')->on('professionals')
                 ->cascadeOnDelete();
 
-            // FK aceita NULL
+            // FK aceita NULL → se o serviço for apagado, não quebra o histórico
             $table->foreign('service_id')
                 ->references('id')->on('services')
                 ->nullOnDelete();
 
-            // Índice
+            /**
+             * Índices otimizados para agenda
+             */
             $table->index(['professional_id', 'start_at'], 'idx_professional_schedule');
         });
     }

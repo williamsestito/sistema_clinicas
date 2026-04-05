@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Appointment;
 use App\Models\Professional;
-use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class ClientAppointmentController extends Controller
 {
     /**
-     * Retorna o cliente autenticado via API OU WEB.
+     * Retorna o cliente autenticado via API ou WEB (client / client_api).
      */
     protected function authenticatedClient()
     {
@@ -22,7 +22,7 @@ class ClientAppointmentController extends Controller
 
 
     /**
-     * Criar pré-agendamento (WEB + API)
+     * Criar pré-agendamento (WEB + API) — corrigido para respeitar horários livres.
      */
     public function store(Request $request)
     {
@@ -42,13 +42,19 @@ class ClientAppointmentController extends Controller
             'time'            => 'required|date_format:H:i',
         ]);
 
-        // Monta o datetime correto
-        $startAt = Carbon::parse("{$validated['date']} {$validated['time']}:00");
+        // Monta o datetime (sem adicionar ":00")
+        $startAt = Carbon::parse("{$validated['date']} {$validated['time']}");
         $endAt   = $startAt->copy()->addMinutes(30);
 
-        // Verifica conflito
+        /**
+         * 🔥 Verificação REAL de conflito
+         * Só bloqueia horários realmente ocupados:
+         * - pending
+         * - confirmed
+         */
         $existing = Appointment::where('professional_id', $validated['professional_id'])
             ->where('start_at', $startAt)
+            ->whereIn('status', ['pending', 'confirmed'])
             ->exists();
 
         if ($existing) {
@@ -58,7 +64,7 @@ class ClientAppointmentController extends Controller
             ], 409);
         }
 
-        // Cria agendamento
+        // Criar agendamento
         $appointment = Appointment::create([
             'tenant_id'        => $client->tenant_id,
             'client_id'        => $client->id,
@@ -80,27 +86,29 @@ class ClientAppointmentController extends Controller
         /**
          * Email cliente
          */
-        Mail::raw(
-            "Olá {$client->name},\n\n" .
-            "Seu pré-agendamento foi registrado.\n" .
-            "📅 Data: {$dateFormatted}\n" .
-            "⏰ Horário: {$timeFormatted}\n" .
-            "👨‍⚕️ Profissional: {$prof->display_name}\n\n" .
-            "Aguarde a confirmação.",
-            fn($msg) => $msg->to($client->email)->subject('Pré-agendamento realizado')
-        );
+        if ($client->email) {
+            Mail::raw(
+                "Olá {$client->name},\n\n".
+                "Seu pré-agendamento foi registrado.\n".
+                "📅 Data: {$dateFormatted}\n".
+                "⏰ Horário: {$timeFormatted}\n".
+                "👨‍⚕️ Profissional: {$prof->display_name}\n\n".
+                "Aguarde a confirmação.",
+                fn($msg) => $msg->to($client->email)->subject('Pré-agendamento realizado')
+            );
+        }
 
         /**
          * Email profissional
          */
         if ($prof?->user?->email) {
             Mail::raw(
-                "Novo pré-agendamento:\n\n" .
-                "Cliente: {$client->name}\n" .
-                "E-mail: {$client->email}\n" .
-                "Data: {$dateFormatted}\n" .
-                "Horário: {$timeFormatted}\n\n",
-                fn($msg) => $msg->to($prof->user->email)->subject('Novo pré-agendamento')
+                "Você recebeu um novo pré-agendamento:\n\n".
+                "Cliente: {$client->name}\n".
+                "Email: {$client->email}\n".
+                "Data: {$dateFormatted}\n".
+                "Horário: {$timeFormatted}\n",
+                fn($msg) => $msg->to($prof->user->email)->subject('Novo Pré-Agendamento')
             );
         }
 
@@ -113,7 +121,7 @@ class ClientAppointmentController extends Controller
 
 
     /**
-     * Lista os agendamentos do cliente — JSON
+     * Lista JSON dos agendamentos do cliente
      */
     public function indexJson()
     {
@@ -136,9 +144,9 @@ class ClientAppointmentController extends Controller
 
         foreach ($appointments as $a) {
 
-            // Corrige especialidades (array / json / string)
+            // Trata especialidades
             $especialidade = '-';
-            if ($a->professional?->specialty) {
+            if (!empty($a->professional?->specialty)) {
                 $esp = is_array($a->professional->specialty)
                     ? $a->professional->specialty
                     : json_decode($a->professional->specialty, true);
@@ -148,17 +156,16 @@ class ClientAppointmentController extends Controller
                 }
             }
 
-            // Monta retorno
             $item = [
                 'id'            => $a->id,
                 'professional'  => $a->professional?->display_name ?? 'Indefinido',
-                'service'       => $a->service_text ?? ($a->notes ?? 'Consulta'),
                 'especialidade' => $especialidade,
-                'start_at'      => $a->start_at ? $a->start_at->format('Y-m-d H:i:s') : null,
-                'data'          => $a->start_at ? $a->start_at->format('Y-m-d') : null,
-                'hora'          => $a->start_at ? $a->start_at->format('H:i') : null,
+                'service'       => $a->service->name ?? ($a->notes ?? 'Consulta'),
+                'data'          => optional($a->start_at)->format('Y-m-d'),
+                'hora'          => optional($a->start_at)->format('H:i'),
+                'start_at'      => optional($a->start_at)->format('Y-m-d H:i:s'),
                 'status'        => $a->status,
-                'status_text'   => $a->status_label ?? ucfirst($a->status),
+                'status_text'   => ucfirst($a->status),
                 'endereco'      => $a->professional?->full_address ?? '-',
                 'notes'         => $a->notes,
             ];
@@ -179,7 +186,7 @@ class ClientAppointmentController extends Controller
 
 
     /**
-     * Cancelar agendamento (WEB + API)
+     * Cancelamento pelo cliente
      */
     public function cancel($id)
     {
@@ -210,7 +217,9 @@ class ClientAppointmentController extends Controller
             ]);
         }
 
-        $appointment->update(['status' => 'cancelled']);
+        $appointment->update([
+            'status' => 'cancelled',
+        ]);
 
         return response()->json([
             'success' => true,
@@ -218,4 +227,3 @@ class ClientAppointmentController extends Controller
         ]);
     }
 }
-

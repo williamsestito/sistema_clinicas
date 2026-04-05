@@ -18,28 +18,18 @@ class ProfessionalScheduleController extends Controller
         $tenantId = $user->tenant_id;
         $professional = $user->professional;
 
-        // Data solicitada ou hoje
         $date = $request->get('date')
             ? Carbon::parse($request->get('date'))
             : Carbon::today();
 
-        /** DIA DA SEMANA */
         $weekday = $date->dayOfWeek;
 
-        /**
-         * ======================================================
-         * 1) PERÍODO ATIVO OU PRÓXIMO PERÍODO FUTURO
-         * ======================================================
-         */
-
-        // Primeiro tenta encontrar período ATIVO
         $period = SchedulePeriod::where('tenant_id', $tenantId)
             ->where('professional_id', $professional->id)
             ->where('start_date', '<=', $date)
             ->where('end_date', '>=', $date)
             ->first();
 
-        // Caso NÃO tenha período ativo → pega o próximo período futuro
         if (!$period) {
             $period = SchedulePeriod::where('tenant_id', $tenantId)
                 ->where('professional_id', $professional->id)
@@ -47,28 +37,21 @@ class ProfessionalScheduleController extends Controller
                 ->orderBy('start_date', 'asc')
                 ->first();
 
-            // Caso nem período futuro exista → sem agenda configurada
             if (!$period) {
                 return view('professional.schedule', [
-                    'date'          => $date,
-                    'activePeriod'  => null,
-                    'error'         => 'Nenhum período ativo ou futuro encontrado.',
-                    'slots'         => collect(),
-                    'appointments'  => collect(),
-                    'blocked'       => collect(),
+                    'date' => $date,
+                    'activePeriod' => null,
+                    'error' => 'Nenhum período ativo ou futuro encontrado.',
+                    'slots' => collect(),
+                    'appointments' => collect(),
+                    'blocked' => collect(),
                 ]);
             }
 
-            // Ajusta a data automaticamente para o início do período futuro
             $date = $period->start_date->copy();
             $weekday = $date->dayOfWeek;
         }
 
-        /**
-         * ======================================================
-         * 2) CONFIGURAÇÃO DE HORÁRIO DO DIA (SchedulePeriodDay)
-         * ======================================================
-         */
         $scheduleDay = SchedulePeriodDay::where('tenant_id', $tenantId)
             ->where('professional_id', $professional->id)
             ->where('period_id', $period->id)
@@ -77,49 +60,31 @@ class ProfessionalScheduleController extends Controller
 
         if (!$scheduleDay) {
             return view('professional.schedule', [
-                'date'          => $date,
-                'activePeriod'  => $period,
-                'error'         => 'Nenhum horário configurado para este dia da semana.',
-                'slots'         => collect(),
-                'appointments'  => collect(),
-                'blocked'       => collect(),
+                'date' => $date,
+                'activePeriod' => $period,
+                'error' => 'Nenhum horário configurado para este dia.',
+                'slots' => collect(),
+                'appointments' => collect(),
+                'blocked' => collect(),
             ]);
         }
 
-        /**
-         * ======================================================
-         * 3) BLOQUEIOS DO DIA
-         * ======================================================
-         */
         $blocked = BlockedDate::where('tenant_id', $tenantId)
             ->where('professional_id', $professional->id)
             ->where('date', $date->toDateString())
             ->get();
 
-        /**
-         * ======================================================
-         * 4) GERAÇÃO DOS SLOTS
-         * ======================================================
-         */
         $slots = $this->generateSlots($scheduleDay);
 
-        /**
-         * ======================================================
-         * 5) AGENDAMENTOS DO DIA
-         * ======================================================
-         */
+        // 🔥 Ajuste ESSENCIAL
         $appointments = Appointment::where('tenant_id', $tenantId)
             ->where('professional_id', $professional->id)
             ->whereDate('start_at', $date)
+            ->whereIn('status', ['pending', 'confirmed']) // FIX
             ->orderBy('start_at')
             ->get();
 
-        /**
-         * ======================================================
-         * 6) CLASSIFICAÇÃO DOS SLOTS
-         * ======================================================
-         */
-        $slots = $slots->map(function ($slot) use ($appointments, $blocked) {
+        $slots = collect($slots)->map(function ($slot) use ($appointments, $blocked) {
 
             if ($blocked->count() > 0) {
                 return [
@@ -150,20 +115,14 @@ class ProfessionalScheduleController extends Controller
         });
 
         return view('professional.schedule', [
-            'date'         => $date,
+            'date' => $date,
             'activePeriod' => $period,
-            'slots'        => $slots,
+            'slots' => $slots,
             'appointments' => $appointments,
-            'blocked'      => $blocked,
+            'blocked' => $blocked,
         ]);
     }
 
-
-    /**
-     * ================================================================
-     * GERAÇÃO DE SLOTS - versão final com proteção anti-loop
-     * ================================================================
-     */
     private function generateSlots(SchedulePeriodDay $day)
     {
         $slots = collect();
@@ -203,7 +162,6 @@ class ProfessionalScheduleController extends Controller
 
             if ($slotEnd > $end) break;
 
-            // Tratamento da pausa
             if ($breakStart && $breakEnd) {
                 if ($start->between($breakStart, $breakEnd) ||
                     $slotEnd->between($breakStart, $breakEnd)) {
@@ -215,7 +173,6 @@ class ProfessionalScheduleController extends Controller
                 }
             }
 
-            // Slot válido
             $slots->push([
                 'start' => $start->format('H:i'),
                 'end'   => $slotEnd->format('H:i'),

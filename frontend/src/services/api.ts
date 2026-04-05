@@ -1,11 +1,9 @@
 import axios, { AxiosError } from 'axios'
-import type {
-  AxiosInstance,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from 'axios'
+import type { AxiosInstance, AxiosResponse } from 'axios'
 
-// Criação da instância principal da API
+let refreshing = false
+let queue: Array<(token: string) => void> = []
+
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
   withCredentials: true,
@@ -16,46 +14,50 @@ const api: AxiosInstance = axios.create({
   },
 })
 
-// ============================
-// 🔐 INTERCEPTOR DE REQUISIÇÃO
-// ============================
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error: AxiosError) => Promise.reject(error)
-)
+// REQUEST
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
 
-// ============================
-// ⚙️ INTERCEPTOR DE RESPOSTA
-// ============================
+// RESPONSE
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: AxiosError) => {
-    if (error.response) {
-      const { status } = error.response
+  async (error: AxiosError & { config: any }) => {
+    const original = error.config
 
-      switch (status) {
-        case 401:
-          console.warn('Sessão expirada ou não autorizada.')
-          localStorage.removeItem('token')
-          window.location.href = '/login'
-          break
-        case 403:
-          console.error('Acesso negado.')
-          break
-        case 500:
-          console.error('Erro interno no servidor.')
-          break
-        default:
-          console.error(`Erro ${status}:`, error.message)
+    if (error.response?.status === 401 && !original._retry) {
+      if (refreshing) {
+        return new Promise((resolve) => {
+          queue.push((token: string) => {
+            original.headers.Authorization = `Bearer ${token}`
+            resolve(api(original))
+          })
+        })
       }
-    } else {
-      console.error('Falha de conexão com o servidor.')
+
+      original._retry = true
+      refreshing = true
+
+      try {
+        await axios.get(`${import.meta.env.VITE_API_BASE_URL}/sanctum/csrf-cookie`, { withCredentials: true })
+
+        const newToken = localStorage.getItem('token')
+
+        queue.forEach(cb => cb(newToken as string))
+        queue = []
+        refreshing = false
+
+        original.headers.Authorization = `Bearer ${newToken}`
+        return api(original)
+
+      } catch (_err) {
+        refreshing = false
+        queue = []
+        localStorage.removeItem('token')
+        window.location.href = '/login'
+      }
     }
 
     return Promise.reject(error)

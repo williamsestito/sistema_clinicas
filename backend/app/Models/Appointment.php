@@ -13,12 +13,14 @@ class Appointment extends Model
         'tenant_id',
         'client_id',
         'professional_id',
-        'service_id', 
+        'service_id',
         'start_at',
         'end_at',
         'status',
         'source',
         'notes',
+        'cancel_reason',
+        'reschedule_reason',
     ];
 
     protected $casts = [
@@ -31,22 +33,25 @@ class Appointment extends Model
         return $this->belongsTo(Tenant::class);
     }
 
+    /** Cliente (User com role=client) */
     public function client()
     {
         return $this->belongsTo(User::class, 'client_id');
     }
 
+    /** Profissional */
     public function professional()
     {
         return $this->belongsTo(Professional::class, 'professional_id');
     }
 
-    // 🔥 Agora explicitamente nullable
+    /** Serviço */
     public function service()
     {
         return $this->belongsTo(Service::class, 'service_id')->withDefault();
     }
 
+    /** Logs */
     public function logs()
     {
         return $this->hasMany(AppointmentLog::class);

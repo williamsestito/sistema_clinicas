@@ -31,9 +31,7 @@ class ClientScheduleController extends Controller
 
     public function cidades(Request $request)
     {
-        $request->validate([
-            'state' => 'required|string|size:2'
-        ]);
+        $request->validate(['state' => 'required|string|size:2']);
 
         return Professional::where('active', true)
             ->where('state', $request->state)
@@ -83,9 +81,7 @@ class ClientScheduleController extends Controller
             );
         }
 
-        return $q->distinct()
-            ->orderBy('name')
-            ->pluck('name');
+        return $q->distinct()->orderBy('name')->pluck('name');
     }
 
     public function profissionais(Request $request)
@@ -132,28 +128,23 @@ class ClientScheduleController extends Controller
 
         $date = Carbon::parse($request->date);
 
-        // datas passadas => força hoje
-        if ($date->isBefore(today())) {
+        if ($date->isPast()) {
             $date = today();
         }
 
         Log::info('[horarios] início', [
-            'professional_id' => $professional->id,
-            'tenant_id'       => $professional->tenant_id,
-            'requested_date'  => $request->date,
+            'requested_date' => $request->date,
             'normalized_date' => $date->toDateString(),
         ]);
 
-        // procura próximos dias por até 60 dias
         for ($i = 0; $i < 60; $i++) {
 
             $result = $this->computeSlots($professional, $date);
 
             if (!empty($result['slots'])) {
-                Log::info('[horarios] data encontrada com slots', [
-                    'professional_id' => $professional->id,
-                    'date'            => $date->toDateString(),
-                    'slots_count'     => count($result['slots']),
+                Log::info('[horarios] Data encontrada com horários', [
+                    'date' => $date->toDateString(),
+                    'slots_count' => count($result['slots']),
                 ]);
 
                 return [
@@ -166,10 +157,6 @@ class ClientScheduleController extends Controller
             $date = $date->copy()->addDay();
         }
 
-        Log::warning('[horarios] nenhum horário encontrado nos próximos 60 dias', [
-            'professional_id' => $professional->id,
-        ]);
-
         return [
             'success' => false,
             'message' => 'Nenhum horário disponível nos próximos dias.',
@@ -179,14 +166,14 @@ class ClientScheduleController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Lógica principal de cálculo de horários
+    | Cálculo real dos horários disponíveis
     |--------------------------------------------------------------------------
     */
 
     private function computeSlots(Professional $professional, Carbon $date)
     {
         $tenantId = $professional->tenant_id;
-        $weekday  = $date->dayOfWeek; // 0=domingo ... 6=sábado
+        $weekday  = $date->dayOfWeek;
 
         $period = SchedulePeriod::where('tenant_id', $tenantId)
             ->where('professional_id', $professional->id)
@@ -194,13 +181,7 @@ class ClientScheduleController extends Controller
             ->whereDate('end_date', '>=', $date)
             ->first();
 
-        if (!$period) {
-            Log::info('[computeSlots] sem período válido', [
-                'professional_id' => $professional->id,
-                'date'            => $date->toDateString(),
-            ]);
-            return ['slots' => []];
-        }
+        if (!$period) return ['slots' => []];
 
         $day = SchedulePeriodDay::where('tenant_id', $tenantId)
             ->where('professional_id', $professional->id)
@@ -208,49 +189,35 @@ class ClientScheduleController extends Controller
             ->where('weekday', $weekday)
             ->first();
 
-        if (!$day || !$day->available) {
-            Log::info('[computeSlots] dia indisponível', [
-                'professional_id' => $professional->id,
-                'date'            => $date->toDateString(),
-                'weekday'         => $weekday,
-            ]);
-            return ['slots' => []];
-        }
+        if (!$day || !$day->available) return ['slots' => []];
 
         if (BlockedDate::where('tenant_id', $tenantId)
             ->where('professional_id', $professional->id)
             ->whereDate('date', $date)
-            ->exists()) 
-        {
-            Log::info('[computeSlots] data bloqueada', [
-                'professional_id' => $professional->id,
-                'date'            => $date->toDateString(),
-            ]);
-            return ['slots' => []];
-        }
+            ->exists()) return ['slots' => []];
 
         $slots = $this->generateSlots($day);
 
-        // remove passados (apenas se for hoje)
         if ($date->isToday()) {
             $now = now()->format('H:i');
             $slots = array_filter($slots, fn($h) => $h > $now);
         }
 
-        // remove horários já ocupados
+        // 🔥 CORREÇÃO DEFINITIVA: horários cancelados voltam para a agenda
         $ocupados = Appointment::where('tenant_id', $tenantId)
             ->where('professional_id', $professional->id)
             ->whereDate('start_at', $date)
+            ->whereIn('status', ['pending', 'confirmed'])  // ← ESSENCIAL
             ->pluck('start_at')
             ->map(fn($s) => Carbon::parse($s)->format('H:i'))
             ->toArray();
 
+        // Liberar horários cancelados
         $slots = array_values(array_diff($slots, $ocupados));
 
-        Log::info('[computeSlots] slots gerados', [
-            'professional_id' => $professional->id,
-            'date'            => $date->toDateString(),
-            'slots_count'     => count($slots),
+        Log::info('[computeSlots] slots finais', [
+            'date' => $date->toDateString(),
+            'slots' => $slots,
         ]);
 
         return ['slots' => $slots];
@@ -258,66 +225,40 @@ class ClientScheduleController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | 🔥 Geração de slots — com guard rail contra loop infinito
+    | Geração real dos slots sem loop infinito
     |--------------------------------------------------------------------------
     */
-private function generateSlots(SchedulePeriodDay $day)
-{
-    $slots = [];
+    private function generateSlots(SchedulePeriodDay $day)
+    {
+        $slots = [];
 
-    if (!$day->start_time || !$day->end_time || !$day->duration) {
+        if (!$day->start_time || !$day->end_time || !$day->duration) {
+            return $slots;
+        }
+
+        $start = Carbon::parse($day->start_time)->setDate(2000, 1, 1);
+        $end   = Carbon::parse($day->end_time)->setDate(2000, 1, 1);
+
+        $breakStart = $day->break_start ? Carbon::parse($day->break_start)->setDate(2000, 1, 1) : null;
+        $breakEnd   = $day->break_end ? Carbon::parse($day->break_end)->setDate(2000, 1, 1) : null;
+
+        while ($start < $end) {
+
+            // intervalo de almoço
+            if ($breakStart && $breakEnd && $start >= $breakStart && $start < $breakEnd) {
+                $start = $breakEnd->copy();
+                continue;
+            }
+
+            $slotEnd = $start->copy()->addMinutes($day->duration);
+
+            if ($slotEnd <= $end) {
+                $slots[] = $start->format('H:i');
+            }
+
+            $start = $slotEnd;
+        }
+
         return $slots;
     }
-
-    // Garantir sempre HH:MM sem data
-    $start = Carbon::createFromFormat('H:i:s', $day->start_time)->setDate(2000,1,1);
-    $end   = Carbon::createFromFormat('H:i:s', $day->end_time)->setDate(2000,1,1);
-
-    $breakStart = $day->break_start
-        ? Carbon::createFromFormat('H:i:s', $day->break_start)->setDate(2000,1,1)
-        : null;
-
-    $breakEnd = $day->break_end
-        ? Carbon::createFromFormat('H:i:s', $day->break_end)->setDate(2000,1,1)
-        : null;
-
-    $safety = 0;
-    $limit = 200; // segurança máxima
-
-    while ($start < $end) {
-
-        $safety++;
-        if ($safety > $limit) {
-            \Log::error('[generateSlots] LOOP INFINITO DETECTADO', [
-                'day_id' => $day->id,
-                'iterations' => $safety,
-                'limit' => $limit,
-                'start' => $start,
-                'end' => $end,
-                'break_start' => $breakStart,
-                'break_end' => $breakEnd,
-            ]);
-            break;
-        }
-
-        // intervalo de almoço
-        if ($breakStart && $breakEnd && $start >= $breakStart && $start < $breakEnd) {
-            $start = $breakEnd->copy(); // pula direto
-            continue;
-        }
-
-        $slotEnd = $start->copy()->addMinutes($day->duration);
-
-        if ($slotEnd <= $end) {
-            $slots[] = $start->format('H:i');
-        }
-
-        $start = $slotEnd;
-    }
-
-    return $slots;
-}
-
-
-
 }
