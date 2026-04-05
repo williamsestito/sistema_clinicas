@@ -6,7 +6,7 @@
     <h1 class="text-xl font-semibold text-gray-700">Colaboradores</h1>
     <a href="{{ route('employees.create') }}" 
        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-      + Adicionar Colaborador
+      <i class="bi bi-plus-lg"></i> Adicionar Colaborador
     </a>
   </div>
 
@@ -78,14 +78,18 @@
               @endif
             </td>
             <td class="px-4 py-2 flex justify-center space-x-3">
-              <a href="{{ route('employees.edit', $usuario->id) }}" 
-                 class="text-blue-600 hover:underline text-sm">Editar</a>
-              
-              <form action="{{ route('employees.destroy', $usuario->id) }}" method="POST" 
-                    onsubmit="return confirm('Tem certeza que deseja excluir este colaborador?')">
+              <a href="{{ route('employees.edit', $usuario->id) }}"
+                 class="text-blue-600 hover:text-blue-800 text-sm" title="Editar">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+
+              <form action="{{ route('employees.destroy', $usuario->id) }}" method="POST">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="text-red-600 hover:underline text-sm">Excluir</button>
+                <button type="button" onclick="confirmDelete(this.closest('form'), 'este colaborador')"
+                        class="text-red-600 hover:text-red-800 text-sm">
+                  <i class="bi bi-trash"></i>
+                </button>
               </form>
             </td>
           </tr>

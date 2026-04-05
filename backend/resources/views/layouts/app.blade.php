@@ -20,6 +20,7 @@
 
   <!-- Estilos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -27,6 +28,9 @@
   <!-- Alpine.js + Plugin Mask -->
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@alpinejs/mask@3.x.x/dist/cdn.min.js" defer></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <meta name="theme-color" content="#1a5632">
 </head>
@@ -57,6 +61,43 @@
     @click="sidebarOpen = false"
     class="fixed inset-0 bg-black bg-opacity-40 z-30 transition-opacity lg:hidden">
   </div>
+
+  {{-- SweetAlert: toast de sucesso --}}
+  @if(session('success'))
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: @json(session('success')),
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+    });
+  </script>
+  @endif
+
+  {{-- SweetAlert: confirmação de exclusão --}}
+  <script>
+    function confirmDelete(formEl, entityName) {
+      Swal.fire({
+        title: 'Tem certeza?',
+        text: 'Deseja realmente excluir ' + (entityName || 'este registro') + '? Esta ação não pode ser desfeita.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar',
+      }).then(function (result) {
+        if (result.isConfirmed) {
+          formEl.submit();
+        }
+      });
+    }
+  </script>
 
 </body>
 </html>

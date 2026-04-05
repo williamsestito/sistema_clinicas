@@ -39,8 +39,9 @@
 
     <!-- indicador de scroll -->
     <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
-      <a href="#sobre" class="flex items-center justify-center w-10 h-16 rounded-full border border-white/30 text-white/80">
-        <span class="block w-2 h-2 rounded-full bg-white/80 animate-bounce"></span>
+      <a href="#sobre" class="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors animate-bounce">
+        <Mouse :size="28" :stroke-width="1.5" />
+        <ChevronDown :size="18" :stroke-width="2" />
       </a>
     </div>
   </section>
@@ -49,6 +50,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useHead } from '@vueuse/head' // opcional, remova se não usar
+import { Mouse, ChevronDown } from 'lucide-vue-next'
 
 // aceita prop com URL da imagem (facilita trocar depois)
 const props = defineProps({

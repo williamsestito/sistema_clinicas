@@ -10,8 +10,16 @@ use App\Http\Controllers\Auth\{
     ResetPasswordController
 };
 
+// Admin Controllers
+use App\Http\Controllers\Admin\{
+    AdminPatientController,
+    AdminProfessionalController,
+    AdminServiceController
+};
+
 // Sistema Controllers
 use App\Http\Controllers\{
+    DashboardController,
     UserController,
     PacientController,
     ProfessionalDashboardController,
@@ -63,9 +71,47 @@ Route::middleware(['auth:web'])->group(function () {
     | ADMIN
     |--------------------------------------------------------------------------
     */
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::view('/dashboard', 'admin.dashboard')->name('dashboard');
+    Route::prefix('admin')->name('admin.')->middleware('role:admin,owner')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::view('/agenda',    'admin.agenda')->name('agenda');
+
+        // Cadastros — Pacientes
+        Route::prefix('patients')->name('patients.')->group(function () {
+            Route::get('/',            [AdminPatientController::class, 'index'])->name('index');
+            Route::get('/create',      [AdminPatientController::class, 'create'])->name('create');
+            Route::post('/',           [AdminPatientController::class, 'store'])->name('store');
+            Route::get('/{id}/edit',   [AdminPatientController::class, 'edit'])->name('edit');
+            Route::put('/{id}',        [AdminPatientController::class, 'update'])->name('update');
+            Route::delete('/{id}',     [AdminPatientController::class, 'destroy'])->name('destroy');
+        });
+
+        // Cadastros — Profissionais
+        Route::prefix('professionals')->name('professionals.')->group(function () {
+            Route::get('/',            [AdminProfessionalController::class, 'index'])->name('index');
+            Route::get('/create',      [AdminProfessionalController::class, 'create'])->name('create');
+            Route::post('/',           [AdminProfessionalController::class, 'store'])->name('store');
+            Route::get('/{id}/edit',   [AdminProfessionalController::class, 'edit'])->name('edit');
+            Route::put('/{id}',        [AdminProfessionalController::class, 'update'])->name('update');
+            Route::delete('/{id}',     [AdminProfessionalController::class, 'destroy'])->name('destroy');
+        });
+
+        // Cadastros — Serviços
+        Route::prefix('services')->name('services.')->group(function () {
+            Route::get('/',            [AdminServiceController::class, 'index'])->name('index');
+            Route::get('/create',      [AdminServiceController::class, 'create'])->name('create');
+            Route::post('/',           [AdminServiceController::class, 'store'])->name('store');
+            Route::get('/{id}/edit',   [AdminServiceController::class, 'edit'])->name('edit');
+            Route::put('/{id}',        [AdminServiceController::class, 'update'])->name('update');
+            Route::delete('/{id}',     [AdminServiceController::class, 'destroy'])->name('destroy');
+        });
+
+        // CMS (placeholders — serão implementados na Fase 3)
+        Route::view('/banners',       'admin.banners.index')->name('banners.index');
+        Route::view('/sections',      'admin.sections.index')->name('sections.index');
+        Route::view('/testimonials',  'admin.testimonials.index')->name('testimonials.index');
+
+        // Configurações
+        Route::view('/settings',      'admin.settings')->name('settings');
     });
 
 
@@ -75,7 +121,7 @@ Route::middleware(['auth:web'])->group(function () {
     | COLABORADORES
     |--------------------------------------------------------------------------
     */
-    Route::prefix('employees')->name('employees.')->group(function () {
+    Route::prefix('employees')->name('employees.')->middleware('role:admin,owner')->group(function () {
         Route::get('/',            [UserController::class, 'listView'])->name('index');
         Route::get('/create',      [UserController::class, 'create'])->name('create');
         Route::post('/',           [UserController::class, 'store'])->name('store');

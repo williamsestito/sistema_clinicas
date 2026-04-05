@@ -32,17 +32,17 @@
 
                 <x-sidebar-link icon="fa-calendar-check" 
                                 label="Meus Agendamentos"
-                                route="pacient.appointments"
+                                route="client.appointments"
                                 :is-open="'sidebarOpen'" />
 
                 <x-sidebar-link icon="fa-stethoscope"
                                 label="Agendar Consulta"
-                                route="pacient.schedule"
+                                route="client.schedule"
                                 :is-open="'sidebarOpen'" />
 
                 <x-sidebar-link icon="fa-user"
                                 label="Meus Dados"
-                                route="pacient.profile"
+                                route="client.profile"
                                 :is-open="'sidebarOpen'" />
             </ul>
 
@@ -127,55 +127,64 @@
         {{-- ========================================================= --}}
         @elseif(in_array($user->role, ['admin', 'owner', 'frontdesk']))
 
-            <div 
-                class="flex space-x-2 px-4 py-2 border-b border-gray-700 overflow-hidden transition-all duration-300"
-                :class="sidebarOpen ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 p-0 border-0'">
-
-                <button class="flex-1 bg-green-600 hover:bg-green-700 text-xs font-medium py-1.5 rounded-md transition">
-                    + Avaliação
-                </button>
-
-                <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-xs font-medium py-1.5 rounded-md transition">
-                    + Evolução
-                </button>
-            </div>
-
             <h3 x-show="sidebarOpen"
                 class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5">
-                Navegação Principal
+                Painel
             </h3>
 
             <ul class="space-y-0.5">
+                <x-sidebar-link icon="fa-chart-line"
+                                label="Dashboard"
+                                route="admin.dashboard"
+                                :is-open="'sidebarOpen'" />
 
                 <x-sidebar-link icon="fa-calendar"
                                 label="Agenda"
-                                route="agenda"
+                                route="admin.agenda"
                                 :is-open="'sidebarOpen'" />
+            </ul>
 
+            <h3 x-show="sidebarOpen"
+                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
+                Cadastros
+            </h3>
+
+            <ul class="space-y-0.5">
                 <x-sidebar-link icon="fa-user-injured"
                                 label="Pacientes"
-                                route="pacients.index"
+                                route="admin.patients.index"
                                 :is-open="'sidebarOpen'" />
 
-                <x-sidebar-link icon="fa-stethoscope"
-                                label="Atendimentos"
-                                route="professional.reports.appointments"
+                <x-sidebar-link icon="fa-user-md"
+                                label="Profissionais"
+                                route="admin.professionals.index"
                                 :is-open="'sidebarOpen'" />
 
-                <x-sidebar-link icon="fa-money-bill-wave"
-                                label="Financeiro"
-                                route="professional.reports.finance"
-                                :is-open="'sidebarOpen'" />
-
-                {{-- 🔥 ROTA AJUSTADA --}}
                 <x-sidebar-link icon="fa-briefcase-medical"
-                                label="Procedimentos"
-                                route="professional.procedures.index"
+                                label="Serviços"
+                                route="admin.services.index"
+                                :is-open="'sidebarOpen'" />
+            </ul>
+
+            <h3 x-show="sidebarOpen"
+                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
+                Site / CMS
+            </h3>
+
+            <ul class="space-y-0.5">
+                <x-sidebar-link icon="fa-image"
+                                label="Banners"
+                                route="admin.banners.index"
                                 :is-open="'sidebarOpen'" />
 
-                <x-sidebar-link icon="fa-gear"
-                                label="Configurar Agenda"
-                                route="professional.schedule.config"
+                <x-sidebar-link icon="fa-layer-group"
+                                label="Seções"
+                                route="admin.sections.index"
+                                :is-open="'sidebarOpen'" />
+
+                <x-sidebar-link icon="fa-star"
+                                label="Depoimentos"
+                                route="admin.testimonials.index"
                                 :is-open="'sidebarOpen'" />
             </ul>
 
@@ -190,9 +199,9 @@
                                 route="employees.index"
                                 :is-open="'sidebarOpen'" />
 
-                <x-sidebar-link icon="fa-gears"
-                                label="Configurações"
-                                route="dashboard"
+                <x-sidebar-link icon="fa-building"
+                                label="Dados da Clínica"
+                                route="admin.settings"
                                 :is-open="'sidebarOpen'" />
             </ul>
 

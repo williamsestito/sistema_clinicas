@@ -111,7 +111,7 @@ class UserController extends Controller
         }
 
         return redirect()->route('employees.index')
-            ->with('success', '✅ Colaborador cadastrado com sucesso.');
+            ->with('success', 'Colaborador cadastrado com sucesso.');
     }
 
     public function edit($id)
@@ -173,7 +173,7 @@ class UserController extends Controller
         $usuario->update($data);
 
         return redirect()->route('employees.index')
-            ->with('success', '✅ Colaborador atualizado com sucesso.');
+            ->with('success', 'Colaborador atualizado com sucesso.');
     }
 
     /**
@@ -203,6 +203,6 @@ class UserController extends Controller
         $usuario->delete();
 
         return redirect()->route('employees.index')
-            ->with('success', '🗑️ Colaborador excluído com sucesso.');
+            ->with('success', 'Colaborador excluído com sucesso.');
     }
 }
