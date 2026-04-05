@@ -1,5 +1,8 @@
 <aside 
-    x-data="{ sidebarOpen: true }"
+    x-data="{ 
+        sidebarOpen: true,
+        menu: '' 
+    }"
     class="bg-[#0B111B] text-gray-100 flex flex-col transition-all duration-300 min-h-screen"
     :class="sidebarOpen ? 'w-64' : 'w-20'">
 
@@ -21,7 +24,7 @@
         $user = Auth::user();
     @endphp
 
-    <nav class="flex-1 mt-2 text-[13px] font-medium space-y-2">
+    <nav class="flex-1 mt-2 text-[13px] font-medium space-y-1 overflow-y-auto sidebar-scroll">
 
         {{-- ========================================================= --}}
         {{-- 🧍 CLIENTE --}}
@@ -65,61 +68,35 @@
         {{-- ========================================================= --}}
         @elseif($user->role === 'professional')
 
-            <h3 x-show="sidebarOpen" 
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5">
-                Profissional
-            </h3>
+            {{-- Profissional --}}
+            <div>
+                <button @click="menu = menu === 'prof' ? '' : 'prof'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>Profissional</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'prof' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'prof'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-chart-line"    label="Dashboard"        route="professional.dashboard"              :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-inbox"         label="Solicitações"     route="professional.appointments.requests"  :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-calendar-days" label="Minha Agenda"     route="professional.schedule"               :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-clock"         label="Configurar Agenda" route="professional.schedule.config"       :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-user-injured"  label="Pacientes"        route="professional.pacients"               :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-stethoscope"   label="Procedimentos"    route="professional.procedures.index"       :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
-            <ul class="space-y-0.5">
-
-                <x-sidebar-link icon="fa-chart-line" 
-                                label="Dashboard"
-                                route="professional.dashboard"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-inbox"
-                                label="Solicitações"
-                                route="professional.appointments.requests"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-calendar-days"
-                                label="Minha Agenda"
-                                route="professional.schedule"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-clock"
-                                label="Configurar Agenda"
-                                route="professional.schedule.config"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-user-injured"
-                                label="Pacientes"
-                                route="professional.pacients"
-                                :is-open="'sidebarOpen'" />
-
-                {{-- 🔥 ROTA AJUSTADA --}}
-                <x-sidebar-link icon="fa-stethoscope"
-                                label="Procedimentos"
-                                route="professional.procedures.index"
-                                :is-open="'sidebarOpen'" />
-            </ul>
-
-            <h3 x-show="sidebarOpen" 
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
-                Relatórios
-            </h3>
-
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-clipboard-list"
-                                label="Atendimentos"
-                                route="professional.reports.appointments"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-money-bill-wave"
-                                label="Financeiro"
-                                route="professional.reports.finance"
-                                :is-open="'sidebarOpen'" />
-            </ul>
+            {{-- Relatórios --}}
+            <div>
+                <button @click="menu = menu === 'profRel' ? '' : 'profRel'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>Relatórios</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'profRel' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'profRel'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-clipboard-list"  label="Atendimentos" route="professional.reports.appointments" :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-money-bill-wave" label="Financeiro"    route="professional.reports.finance"      :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
 
         {{-- ========================================================= --}}
@@ -127,166 +104,107 @@
         {{-- ========================================================= --}}
         @elseif(in_array($user->role, ['admin', 'owner', 'frontdesk']))
 
-            <h3 x-show="sidebarOpen"
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5">
-                Painel
-            </h3>
-
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-chart-line"
-                                label="Dashboard"
-                                route="admin.dashboard"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-calendar"
-                                label="Agenda"
-                                route="admin.agenda"
-                                :is-open="'sidebarOpen'" />
+            {{-- Painel (sempre visível, sem toggle) --}}
+            <ul class="space-y-0.5 pb-1">
+                <x-sidebar-link icon="fa-chart-line" label="Dashboard" route="admin.dashboard" :is-open="'sidebarOpen'" />
+                <x-sidebar-link icon="fa-calendar"   label="Agenda"    route="admin.agenda"    :is-open="'sidebarOpen'" />
             </ul>
 
-            <h3 x-show="sidebarOpen"
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
-                Cadastros
-            </h3>
+            {{-- Cadastros --}}
+            <div>
+                <button @click="menu = menu === 'cad' ? '' : 'cad'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>Cadastros</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'cad' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'cad'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-user-injured"      label="Pacientes"    route="admin.patients.index"      :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-user-md"           label="Profissionais" route="admin.professionals.index" :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-briefcase-medical" label="Serviços"     route="admin.services.index"      :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-user-injured"
-                                label="Pacientes"
-                                route="admin.patients.index"
-                                :is-open="'sidebarOpen'" />
+            {{-- Site / CMS --}}
+            <div>
+                <button @click="menu = menu === 'cms' ? '' : 'cms'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>Site / CMS</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'cms' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'cms'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-image"       label="Banners"     route="admin.banners.index"      :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-layer-group"  label="Seções"      route="admin.sections.index"     :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-star"         label="Depoimentos" route="admin.testimonials.index" :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
-                <x-sidebar-link icon="fa-user-md"
-                                label="Profissionais"
-                                route="admin.professionals.index"
-                                :is-open="'sidebarOpen'" />
+            {{-- Financeiro --}}
+            <div>
+                <button @click="menu = menu === 'fin' ? '' : 'fin'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>Financeiro</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'fin' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'fin'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-dollar-sign" label="Lançamentos" route="admin.financial.index"     :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-tags"        label="Categorias"  route="admin.financial.categories" :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
-                <x-sidebar-link icon="fa-briefcase-medical"
-                                label="Serviços"
-                                route="admin.services.index"
-                                :is-open="'sidebarOpen'" />
-            </ul>
+            {{-- Relatórios --}}
+            <div>
+                <button @click="menu = menu === 'rel' ? '' : 'rel'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>Relatórios</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'rel' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'rel'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-clipboard-list"  label="Atendimentos"   route="admin.reports.appointments" :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-money-bill-wave" label="Rel. Financeiro" route="admin.reports.financial"    :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
-            <h3 x-show="sidebarOpen"
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
-                Site / CMS
-            </h3>
+            {{-- Administração --}}
+            <div>
+                <button @click="menu = menu === 'adm' ? '' : 'adm'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>Administração</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'adm' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'adm'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-users-gear" label="Colaboradores"    route="employees.index" :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-hospital"   label="Dados da Clínica" route="admin.clinic"    :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-building"   label="Config. do Site"  route="admin.settings"  :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-image"
-                                label="Banners"
-                                route="admin.banners.index"
-                                :is-open="'sidebarOpen'" />
+            {{-- WhatsApp --}}
+            <div>
+                <button @click="menu = menu === 'wpp' ? '' : 'wpp'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>WhatsApp</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'wpp' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'wpp'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-brands fa-whatsapp" label="Dashboard"    route="admin.whatsapp.dashboard" :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-envelope"           label="Mensagens"     route="admin.whatsapp.messages"  :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-bullhorn"           label="Campanhas"     route="admin.whatsapp.campaigns" :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-gear"               label="Configurações" route="admin.whatsapp.settings"  :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
-                <x-sidebar-link icon="fa-layer-group"
-                                label="Seções"
-                                route="admin.sections.index"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-star"
-                                label="Depoimentos"
-                                route="admin.testimonials.index"
-                                :is-open="'sidebarOpen'" />
-            </ul>
-
-            <h3 x-show="sidebarOpen"
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
-                Financeiro
-            </h3>
-
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-dollar-sign"
-                                label="Lançamentos"
-                                route="admin.financial.index"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-tags"
-                                label="Categorias"
-                                route="admin.financial.categories"
-                                :is-open="'sidebarOpen'" />
-            </ul>
-
-            <h3 x-show="sidebarOpen"
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
-                Relatórios
-            </h3>
-
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-clipboard-list"
-                                label="Atendimentos"
-                                route="admin.reports.appointments"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-money-bill-wave"
-                                label="Rel. Financeiro"
-                                route="admin.reports.financial"
-                                :is-open="'sidebarOpen'" />
-            </ul>
-
-            <h3 x-show="sidebarOpen"
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
-                Administração
-            </h3>
-
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-users-gear"
-                                label="Colaboradores"
-                                route="employees.index"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-hospital"
-                                label="Dados da Clínica"
-                                route="admin.clinic"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-building"
-                                label="Config. do Site"
-                                route="admin.settings"
-                                :is-open="'sidebarOpen'" />
-            </ul>
-
-            <h3 x-show="sidebarOpen"
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
-                WhatsApp
-            </h3>
-
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-brands fa-whatsapp"
-                                label="Dashboard"
-                                route="admin.whatsapp.dashboard"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-envelope"
-                                label="Mensagens"
-                                route="admin.whatsapp.messages"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-bullhorn"
-                                label="Campanhas"
-                                route="admin.whatsapp.campaigns"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-gear"
-                                label="Configurações"
-                                route="admin.whatsapp.settings"
-                                :is-open="'sidebarOpen'" />
-            </ul>
-
-            <h3 x-show="sidebarOpen"
-                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
-                Logs
-            </h3>
-
-            <ul class="space-y-0.5">
-                <x-sidebar-link icon="fa-clock-rotate-left"
-                                label="Logs Agendamentos"
-                                route="admin.logs.appointments"
-                                :is-open="'sidebarOpen'" />
-
-                <x-sidebar-link icon="fa-bell"
-                                label="Logs Notificações"
-                                route="admin.logs.notifications"
-                                :is-open="'sidebarOpen'" />
-            </ul>
+            {{-- Logs --}}
+            <div>
+                <button @click="menu = menu === 'logs' ? '' : 'logs'" x-show="sidebarOpen"
+                        class="w-full flex items-center justify-between px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors">
+                    <span>Logs</span>
+                    <i class="fa fa-chevron-down text-[9px] transition-transform duration-200" :class="menu === 'logs' ? 'rotate-180' : ''"></i>
+                </button>
+                <ul x-show="!sidebarOpen || menu === 'logs'" x-collapse class="space-y-0.5">
+                    <x-sidebar-link icon="fa-clock-rotate-left" label="Logs Agendamentos" route="admin.logs.appointments"  :is-open="'sidebarOpen'" />
+                    <x-sidebar-link icon="fa-bell"              label="Logs Notificações" route="admin.logs.notifications" :is-open="'sidebarOpen'" />
+                </ul>
+            </div>
 
             {{-- Link externo para o site --}}
             <div class="border-t border-gray-700 mt-4 pt-3 px-4">
@@ -302,3 +220,10 @@
     </nav>
 
 </aside>
+
+<style>
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+</style>
