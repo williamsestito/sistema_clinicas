@@ -58,12 +58,12 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Mensagem <span class="text-red-500">*</span></label>
             <textarea name="message_template" rows="6" required
                       class="w-full border rounded-md px-3 py-2 text-sm font-mono"
-                      placeholder="Olá {{nome}}, temos uma novidade...">{{ old('message_template') }}</textarea>
+                      placeholder="Olá @{{nome}}, temos uma novidade...">{{ old('message_template') }}</textarea>
             <div class="mt-2 flex flex-wrap gap-1.5">
                 <span class="text-xs text-gray-500">Variáveis disponíveis:</span>
-                <button type="button" @click="insertVar('{{nome}}')"
+                <button type="button" @click="insertVar('&#123;&#123;nome&#125;&#125;')"
                         class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-0.5 rounded cursor-pointer">@{{nome}}</button>
-                <button type="button" @click="insertVar('{{clinica}}')"
+                <button type="button" @click="insertVar('&#123;&#123;clinica&#125;&#125;')"
                         class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-0.5 rounded cursor-pointer">@{{clinica}}</button>
             </div>
         </div>

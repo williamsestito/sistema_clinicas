@@ -133,4 +133,26 @@ class AdminPatientController extends Controller
         return redirect()->route('admin.patients.index')
             ->with('success', 'Paciente excluído com sucesso.');
     }
+
+    /**
+     * JSON autocomplete – retorna até 10 pacientes que batem com o termo.
+     */
+    public function searchJson(Request $request)
+    {
+        $tenantId = Auth::user()->tenant_id;
+        $term     = $request->input('q', '');
+
+        if (strlen($term) < 2) {
+            return response()->json([]);
+        }
+
+        $results = Client::ofTenant($tenantId)
+            ->search($term)
+            ->select('id', 'name', 'phone', 'email')
+            ->ordered()
+            ->limit(10)
+            ->get();
+
+        return response()->json($results);
+    }
 }

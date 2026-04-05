@@ -93,6 +93,7 @@ Route::middleware(['auth:web'])->group(function () {
 
         // Cadastros — Pacientes
         Route::prefix('patients')->name('patients.')->group(function () {
+            Route::get('/search-json', [AdminPatientController::class, 'searchJson'])->name('searchJson');
             Route::get('/',            [AdminPatientController::class, 'index'])->name('index');
             Route::get('/create',      [AdminPatientController::class, 'create'])->name('create');
             Route::post('/',           [AdminPatientController::class, 'store'])->name('store');
