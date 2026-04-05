@@ -16,26 +16,46 @@
 
       {{-- Dropdown de resultados --}}
       <div x-show="show && results.length > 0" x-transition
-           class="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+           class="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
         <template x-for="(p, idx) in results" :key="p.id">
-          <a :href="editUrl(p.id)"
-             class="flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 cursor-pointer border-b last:border-b-0 transition-colors"
-             :class="{ 'bg-green-50': idx === selectedIdx }">
-            <div class="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-bold"
-                 x-text="p.name.charAt(0).toUpperCase()"></div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-800 truncate" x-text="p.name"></p>
-              <p class="text-xs text-gray-400 truncate" x-text="p.phone || p.email || ''"></p>
+          <div class="border-b last:border-b-0">
+            {{-- Nome do paciente --}}
+            <div class="flex items-center gap-3 px-4 pt-2.5 pb-1">
+              <div class="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-bold"
+                   x-text="p.name.charAt(0).toUpperCase()"></div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 truncate" x-text="p.name"></p>
+                <p class="text-xs text-gray-400 truncate" x-text="p.phone || p.email || ''"></p>
+              </div>
             </div>
-            <i class="fa fa-chevron-right text-gray-300 text-xs"></i>
-          </a>
+            {{-- Ações --}}
+            <div class="flex items-center gap-1 px-4 pb-2.5 pt-1 ml-11">
+              <a :href="editUrl(p.id)"
+                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition">
+                <i class="fa fa-pen-to-square"></i> Editar
+              </a>
+              <a :href="agendaUrl(p.id)"
+                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
+                <i class="fa fa-calendar-plus"></i> Agendar
+              </a>
+              <a :href="financialUrl(p.id)"
+                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition">
+                <i class="fa fa-money-bill"></i> Pagamento
+              </a>
+            </div>
+          </div>
         </template>
       </div>
 
-      {{-- Nenhum resultado --}}
+      {{-- Nenhum resultado — sugerir cadastro --}}
       <div x-show="show && results.length === 0 && query.length >= 2 && !loading" x-transition
-           class="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-50 px-4 py-3 text-sm text-gray-400 text-center">
-        Nenhum paciente encontrado.
+           class="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-50 px-4 py-3">
+        <p class="text-sm text-gray-400 text-center mb-2">Nenhum paciente encontrado.</p>
+        <a :href="createUrl()"
+           class="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium bg-green-50 text-green-700 hover:bg-green-100 transition">
+          <i class="fa fa-user-plus"></i>
+          Cadastrar "<span x-text="query" class="font-semibold"></span>"
+        </a>
       </div>
 
       {{-- Loading --}}
@@ -123,6 +143,18 @@ function patientSearch() {
 
     editUrl(id) {
       return '{{ url("admin/patients") }}/' + id + '/edit';
+    },
+
+    agendaUrl(id) {
+      return '{{ url("admin/agenda") }}?client_id=' + id;
+    },
+
+    financialUrl(id) {
+      return '{{ url("admin/financial/create") }}?client_id=' + id;
+    },
+
+    createUrl() {
+      return '{{ url("admin/patients/create") }}?name=' + encodeURIComponent(this.query);
     },
 
     moveDown() {

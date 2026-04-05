@@ -273,5 +273,8 @@ class DatabaseSeeder extends Seeder
 
         // Seções do site, configurações e depoimentos
         $this->call(SectionSeeder::class);
+
+        // Dados de demonstração (pacientes, agendamentos, financeiro)
+        $this->call(DemoDataSeeder::class);
     }
 }
