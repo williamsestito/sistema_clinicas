@@ -11,11 +11,12 @@
       <div class="flex items-start">
         <!-- conteúdo principal -->
         <div class="w-full lg:w-full pt-16 md:pt-24">
-          <h1 class="font-serif text-4xl md:text-6xl lg:text-7xl text-white leading-tight drop-shadow-sm"
-              v-html="title">
+          <h1 class="font-serif text-4xl md:text-6xl lg:text-7xl text-white leading-tight drop-shadow-sm">
+            {{ title }}
           </h1>
 
-          <p class="mt-6 text-emerald-100/90 text-sm md:text-base max-w-xl" v-html="subtitle">
+          <p class="mt-6 text-emerald-100/90 text-sm md:text-base max-w-xl">
+            {{ subtitle }}
           </p>
 
           <div class="mt-8">

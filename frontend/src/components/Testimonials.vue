@@ -26,7 +26,7 @@
             class="flex items-stretch gap-6 px-2"
           >
             <article
-              v-for="(t, idx) in testimonials"
+              v-for="(t, idx) in displayTestimonials"
               :key="idx + '-' + t.author"
               class="bg-white p-6 md:p-8 rounded-xl border border-emerald-100 shadow-sm flex-shrink-0"
               :class="cardWidthClass"
@@ -89,7 +89,7 @@ const fallbackTestimonials: DisplayTestimonial[] = [
   { quote: 'Tratamento podológico impecável. Senti alívio imediato após a primeira sessão. Equipe nota 10!', author: 'Carlos Mendes', rating: 5 },
 ]
 
-const testimonials = computed<DisplayTestimonial[]>(() => {
+const displayTestimonials = computed<DisplayTestimonial[]>(() => {
   if (props.testimonials && props.testimonials.length > 0) {
     return props.testimonials.map(t => ({
       quote: t.comment,

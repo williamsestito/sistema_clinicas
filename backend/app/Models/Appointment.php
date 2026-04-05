@@ -21,6 +21,7 @@ class Appointment extends Model
         'payment_status',
         'color',
         'notes',
+        'charged_amount',
     ];
 
     protected $casts = [

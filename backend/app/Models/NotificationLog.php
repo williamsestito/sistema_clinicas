@@ -12,6 +12,8 @@ class NotificationLog extends Model
 {
     use HasFactory;
 
+    protected $table = 'notifications_log';
+
     /**
      * Atributos que podem ser preenchidos em massa.
      */

@@ -190,6 +190,40 @@
 
             <h3 x-show="sidebarOpen"
                 class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
+                Financeiro
+            </h3>
+
+            <ul class="space-y-0.5">
+                <x-sidebar-link icon="fa-dollar-sign"
+                                label="Lançamentos"
+                                route="admin.financial.index"
+                                :is-open="'sidebarOpen'" />
+
+                <x-sidebar-link icon="fa-tags"
+                                label="Categorias"
+                                route="admin.financial.categories"
+                                :is-open="'sidebarOpen'" />
+            </ul>
+
+            <h3 x-show="sidebarOpen"
+                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
+                Relatórios
+            </h3>
+
+            <ul class="space-y-0.5">
+                <x-sidebar-link icon="fa-clipboard-list"
+                                label="Atendimentos"
+                                route="admin.reports.appointments"
+                                :is-open="'sidebarOpen'" />
+
+                <x-sidebar-link icon="fa-money-bill-wave"
+                                label="Rel. Financeiro"
+                                route="admin.reports.financial"
+                                :is-open="'sidebarOpen'" />
+            </ul>
+
+            <h3 x-show="sidebarOpen"
+                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
                 Administração
             </h3>
 
@@ -199,9 +233,31 @@
                                 route="employees.index"
                                 :is-open="'sidebarOpen'" />
 
-                <x-sidebar-link icon="fa-building"
+                <x-sidebar-link icon="fa-hospital"
                                 label="Dados da Clínica"
+                                route="admin.clinic"
+                                :is-open="'sidebarOpen'" />
+
+                <x-sidebar-link icon="fa-building"
+                                label="Config. do Site"
                                 route="admin.settings"
+                                :is-open="'sidebarOpen'" />
+            </ul>
+
+            <h3 x-show="sidebarOpen"
+                class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-4 py-1.5 mt-3">
+                Logs
+            </h3>
+
+            <ul class="space-y-0.5">
+                <x-sidebar-link icon="fa-clock-rotate-left"
+                                label="Logs Agendamentos"
+                                route="admin.logs.appointments"
+                                :is-open="'sidebarOpen'" />
+
+                <x-sidebar-link icon="fa-bell"
+                                label="Logs Notificações"
+                                route="admin.logs.notifications"
                                 :is-open="'sidebarOpen'" />
             </ul>
 

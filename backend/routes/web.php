@@ -14,8 +14,13 @@ use App\Http\Controllers\Auth\{
 use App\Http\Controllers\Admin\{
     AdminAgendaController,
     AdminBannerController,
+    AdminClinicController,
+    AdminFinancialController,
+    AdminLogController,
     AdminPatientController,
+    AdminProfileController,
     AdminProfessionalController,
+    AdminReportController,
     AdminSectionController,
     AdminServiceController,
     AdminSettingsController,
@@ -145,9 +150,42 @@ Route::middleware(['auth:web'])->group(function () {
             Route::delete('/{id}',     [AdminTestimonialController::class, 'destroy'])->name('destroy');
         });
 
-        // Configurações
+        // Configurações do Site (CMS)
         Route::get('/settings',  [AdminSettingsController::class, 'index'])->name('settings');
         Route::put('/settings',  [AdminSettingsController::class, 'update'])->name('settings.update');
+
+        // Dados da Clínica (Tenant)
+        Route::get('/clinic',  [AdminClinicController::class, 'index'])->name('clinic');
+        Route::put('/clinic',  [AdminClinicController::class, 'update'])->name('clinic.update');
+
+        // Perfil do Admin
+        Route::get('/profile',  [AdminProfileController::class, 'index'])->name('profile');
+        Route::put('/profile',  [AdminProfileController::class, 'update'])->name('profile.update');
+
+        // Relatórios
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/appointments', [AdminReportController::class, 'appointments'])->name('appointments');
+            Route::get('/financial',    [AdminReportController::class, 'financial'])->name('financial');
+        });
+
+        // Financeiro
+        Route::prefix('financial')->name('financial.')->group(function () {
+            Route::get('/',            [AdminFinancialController::class, 'index'])->name('index');
+            Route::get('/create',      [AdminFinancialController::class, 'create'])->name('create');
+            Route::post('/',           [AdminFinancialController::class, 'store'])->name('store');
+            Route::get('/{id}/edit',   [AdminFinancialController::class, 'edit'])->name('edit');
+            Route::put('/{id}',        [AdminFinancialController::class, 'update'])->name('update');
+            Route::delete('/{id}',     [AdminFinancialController::class, 'destroy'])->name('destroy');
+            Route::get('/categories',       [AdminFinancialController::class, 'categories'])->name('categories');
+            Route::post('/categories',      [AdminFinancialController::class, 'storeCategory'])->name('categories.store');
+            Route::delete('/categories/{id}', [AdminFinancialController::class, 'destroyCategory'])->name('categories.destroy');
+        });
+
+        // Logs
+        Route::prefix('logs')->name('logs.')->group(function () {
+            Route::get('/appointments',  [AdminLogController::class, 'appointments'])->name('appointments');
+            Route::get('/notifications', [AdminLogController::class, 'notifications'])->name('notifications');
+        });
     });
 
 

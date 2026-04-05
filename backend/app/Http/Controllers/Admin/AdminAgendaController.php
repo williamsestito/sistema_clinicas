@@ -104,6 +104,7 @@ class AdminAgendaController extends Controller
                     'duration_min'      => $apt->service->duration_min ?? 30,
                     'status'            => $apt->status,
                     'payment_status'    => $apt->payment_status ?? 'pending',
+                    'charged_amount'    => $apt->charged_amount,
                     'notes'             => $apt->notes,
                     'color'             => $apt->color,
                 ],
@@ -158,6 +159,7 @@ class AdminAgendaController extends Controller
             'start_at'        => 'required|date',
             'end_at'          => 'required|date|after:start_at',
             'payment_status'  => 'in:pending,paid,plan',
+            'charged_amount'  => 'nullable|numeric|min:0',
             'color'           => 'nullable|string|max:7',
             'notes'           => 'nullable|string|max:500',
         ]);
@@ -185,6 +187,7 @@ class AdminAgendaController extends Controller
                 'status'          => 'pending',
                 'source'          => 'staff',
                 'payment_status'  => $request->payment_status ?? 'pending',
+                'charged_amount'  => $request->charged_amount,
                 'color'           => $request->color,
                 'notes'           => $request->notes,
             ]);
@@ -218,6 +221,7 @@ class AdminAgendaController extends Controller
             'end_at'          => 'sometimes|date|after:start_at',
             'status'          => 'sometimes|in:pending,confirmed,done,cancelled,no_show',
             'payment_status'  => 'sometimes|in:pending,paid,plan',
+            'charged_amount'  => 'nullable|numeric|min:0',
             'color'           => 'nullable|string|max:7',
             'notes'           => 'nullable|string|max:500',
             'client_id'       => 'sometimes|exists:users,id',
@@ -246,7 +250,7 @@ class AdminAgendaController extends Controller
             $oldStatus = $appointment->status;
             $appointment->update($request->only([
                 'start_at', 'end_at', 'status', 'payment_status',
-                'color', 'notes', 'client_id', 'professional_id', 'service_id',
+                'charged_amount', 'color', 'notes', 'client_id', 'professional_id', 'service_id',
             ]));
 
             $noteText = $request->has('start_at')

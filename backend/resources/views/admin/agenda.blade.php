@@ -213,6 +213,15 @@
           </div>
         </div>
 
+        {{-- Valor Cobrado --}}
+        <div>
+          <label class="text-sm text-gray-600 font-medium">Valor Cobrado (R$)</label>
+          <input type="number" x-model="form.charged_amount" step="0.01" min="0"
+                 class="w-full border rounded-lg px-3 py-2 text-sm mt-1"
+                 :placeholder="selectedServicePrice ? 'Preço do serviço: R$ ' + Number(selectedServicePrice).toFixed(2) : 'Deixe vazio para usar preço do serviço'">
+          <p class="text-xs text-gray-400 mt-1">Deixe vazio para usar o preço padrão do serviço.</p>
+        </div>
+
         {{-- Cor --}}
         <div>
           <label class="text-sm text-gray-600 font-medium">Cor do evento</label>
@@ -283,6 +292,12 @@ function agendaApp() {
     saving: false,
     appData: APP_DATA,
     filteredServices: APP_DATA.services,
+
+    get selectedServicePrice() {
+      if (!this.form.service_id) return null;
+      var svc = this.appData.services.find(function(s) { return s.id == this.form.service_id; }.bind(this));
+      return svc ? svc.price : null;
+    },
     form: {
       client_id: '',
       professional_id: '',
@@ -291,6 +306,7 @@ function agendaApp() {
       end_at: '',
       status: 'pending',
       payment_status: 'pending',
+      charged_amount: '',
       color: '',
       notes: '',
     },
@@ -401,6 +417,7 @@ function agendaApp() {
         end_at: '',
         status: 'pending',
         payment_status: 'pending',
+        charged_amount: '',
         color: '',
         notes: '',
       };
@@ -436,6 +453,7 @@ function agendaApp() {
         end_at: event.end ? this.toLocalDatetime(event.end) : '',
         status: props.status,
         payment_status: props.payment_status || 'pending',
+        charged_amount: props.charged_amount || '',
         color: props.color || '',
         notes: props.notes || '',
       };
